@@ -1,0 +1,17 @@
+bin
+bin/**
+cloudflared.exe
+*.zip
+*.log
+*.vbs
+EduBattle.apk
+backend/EduBattle.apk
+backend/uploads/**
+backend/uploads
+.git
+.gemini
+__pycache__
+*.pyc
+.venv
+node_modules
+frontend/downloads/**

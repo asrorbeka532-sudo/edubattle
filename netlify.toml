@@ -1,0 +1,43 @@
+[build]
+  publish = "frontend"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://define-algorithm-choir-icon.trycloudflare.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://define-algorithm-choir-icon.trycloudflare.com/uploads/:splat"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/apk"
+  to = "/downloads/EduBattle.apk"
+  status = 302
+
+[[redirects]]
+  from = "/app"
+  to = "/"
+  status = 302
+
+[[redirects]]
+  from = "/download"
+  to = "/download.html"
+  status = 200
+
+[[headers]]
+  for = "/downloads/*.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"
+    Content-Disposition = "attachment; filename=\"EduBattle.apk\""
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "*"

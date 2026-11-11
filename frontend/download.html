@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EduBattle - Ilovani Yuklab Olish (Android & iOS)</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#090a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+
+  <!-- Minimalist Modern Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('edubattle_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .download-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 18px 40px;
+      box-sizing: border-box;
+    }
+    .brand-hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .brand-logo-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 10px 25px rgba(225, 29, 72, 0.35);
+      margin-bottom: 12px;
+    }
+    .download-hero-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    .btn-download-apk {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #e11d48;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+      transition: all 0.2s ease;
+      margin: 16px 0 10px;
+    }
+    .btn-download-apk:hover {
+      background: #be123c;
+      transform: translateY(-1px);
+    }
+    .meta-pills {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .meta-pill {
+      font-size: 11px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .guide-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: left;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+  </style>
+
+  <style id="antiNetlifyWatermark">
+    #nl-badge-frame,
+    iframe[id*="nl-badge"],
+    iframe[src*="netlify"],
+    div[id*="netlify"],
+    div[class*="netlify"],
+    .netlify-badge,
+    [data-netlify-badge],
+    netlify-drawer,
+    #netlify-drawer,
+    [class*="netlify-drawer"],
+    [id*="netlify-feedback"],
+    [class*="netlify-feedback"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -999999 !important;
+    }
+  </style>
+  <script id="antiNetlifyScript">
+    (function() {
+      function removeNetlifyBadge() {
+        var sels = [
+          '#nl-badge-frame',
+          'iframe[id*="nl-badge"]',
+          'iframe[src*="netlify"]',
+          'div[id*="netlify"]',
+          'div[class*="netlify"]',
+          '.netlify-badge',
+          '[data-netlify-badge]',
+          'netlify-drawer',
+          '#netlify-drawer',
+          '[class*="netlify-drawer"]',
+          '[id*="netlify-feedback"]',
+          '[class*="netlify-feedback"]'
+        ];
+        for (var i = 0; i < sels.length; i++) {
+          var nodes = document.querySelectorAll(sels[i]);
+          for (var j = 0; j < nodes.length; j++) {
+            try { nodes[j].remove(); } catch (e) {
+              nodes[j].style.setProperty('display', 'none', 'important');
+              nodes[j].style.setProperty('visibility', 'hidden', 'important');
+              nodes[j].style.setProperty('opacity', '0', 'important');
+              nodes[j].style.setProperty('pointer-events', 'none', 'important');
+            }
+          }
+        }
+      }
+      removeNetlifyBadge();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeNetlifyBadge);
+      }
+      window.addEventListener('load', removeNetlifyBadge);
+      try {
+        var obs = new MutationObserver(removeNetlifyBadge);
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+      } catch (e) {}
+    })();
+  </script>
+
+</head>
+<body>
+  <div class="download-container">
+    <div class="brand-hero">
+      <div class="brand-logo-badge" style="overflow:hidden; padding:0; background:transparent;"><img src="/icons/icon-192.png" alt="EduBattle" style="width:100%; height:100%; border-radius:16px; object-fit:cover;"></div>
+      <h1 style="font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.5px;">EDUBATTLE</h1>
+      <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0;">Maktab & Litsey Ta'lim Tizimi Rasmiy Ilovasi</p>
+    </div>
+
+    <!-- Android APK Card -->
+    <div class="download-hero-card">
+      <div style="font-size: 32px; margin-bottom: 6px;">🤖</div>
+      <h2 style="font-size: 17px; font-weight: 800; margin: 0;">Android Ilovasi (.APK)</h2>
+      <p style="font-size: 11px; color: var(--text-muted); margin: 4px 0 0;">
+        Yuqori tezlikdagi Netlify Cloud orqali to'g'ridan-to'g'ri yuklab oling
+      </p>
+
+      <a href="/downloads/EduBattle.apk" download="EduBattle.apk" class="btn-download-apk" id="directDownloadBtn">
+        <span style="font-size: 18px;">⬇️</span>
+        <span>EduBattle.apk Yuklab Olish</span>
+      </a>
+
+      <div class="meta-pills">
+        <span class="meta-pill">📦 Hajmi: 1.6 MB</span>
+        <span class="meta-pill">⚡️ Versiya: 1.0 Rasmiy</span>
+        <span class="meta-pill">📱 Android 5.0+</span>
+      </div>
+    </div>
+
+    <!-- O'rnatish yo'riqnomasi -->
+    <div class="minimal-card" style="padding: 16px; margin-bottom: 16px;">
+      <h3 style="font-size: 13px; font-weight: 800; margin: 0 0 12px; display:flex; align-items:center; gap:6px;">
+        <span>📲</span>
+        <span>Android-ga o'rnatish tartibi:</span>
+      </h3>
+      <div class="guide-step">
+        <div class="step-num">1</div>
+        <div>Yuqoridagi <b>"EduBattle.apk Yuklab Olish"</b> tugmasini bosing va fayl yuklanguncha kuting (1-2 soniya).</div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">2</div>
+        <div>Brauzer xabarnomasidan yoki <b>"Yuklamalar" (Downloads)</b> jildidan <b>EduBattle.apk</b> faylini oching.</div>
+      </div>
+      <div class="guide-step">
+        <div class="step-num">3</div>
+        <div><b>"O'rnatish" (Install)</b> tugmasini bosing. Agar xavfsizlik oynasi chiqsa, <i>"Noma'lum manbalardan ruxsat berish" (Разрешить)</i> tugmasini tanlang.</div>
+      </div>
+      <div class="guide-step" style="margin-bottom:0;">
+        <div class="step-num">4</div>
+        <div>Ilovani oching va o'z hisobingiz bilan tizimga kiring! 🚀</div>
+      </div>
+    </div>
+
+    <!-- iOS / iPhone Card -->
+    <div class="minimal-card" style="padding: 16px; margin-bottom: 16px; background: rgba(5, 150, 105, 0.05); border-color: rgba(5, 150, 105, 0.25);">
+      <h3 style="font-size: 13px; font-weight: 800; margin: 0 0 8px; color: var(--accent-green); display:flex; align-items:center; gap:6px;">
+        <span>🍏</span>
+        <span>iPhone va iPad (iOS) foydalanuvchilariga:</span>
+      </h3>
+      <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.45; margin: 0 0 10px;">
+        Apple qurilmalarida ilovani <b>Safari brauzeri</b> orqali 10 soniyada o'rnatish mumkin:
+      </p>
+      <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+        1️⃣ Safari brauzerida ilovani oching: <a href="/" style="color:var(--accent-green); font-weight:700;">edubattle.uz</a><br>
+        2️⃣ Safari pastidagi <b>"Ulashish" (Share ⬆️)</b> tugmasini bosing.<br>
+        3️⃣ Menyudan <b>"Bosh ekranga qo'shish" (Add to Home Screen ➕)</b> bandini tanlang.<br>
+        4️⃣ <b>"Qo'shish" (Add)</b> tugmasini bosing.
+      </div>
+    </div>
+
+    <!-- Fast action buttons -->
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <a href="/" class="btn btn-outline" style="text-align:center; padding:10px; font-size:12px; text-decoration:none; display:block;">
+        🌐 EduBattle Veb-talqiniga kirish
+      </a>
+      <a href="https://t.me/edubattleuz_bot" class="btn btn-outline" style="text-align:center; padding:10px; font-size:12px; text-decoration:none; display:block;" target="_blank">
+        ✈️ Rasmiy Telegram Bot: @edubattleuz_bot
+      </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <span style="font-size: 10px; color: var(--text-muted);">© 2026 EduBattle Platformasi. Barcha huquqlar himoyalangan.</span>
+    </div>
+  </div>
+</body>
+</html>

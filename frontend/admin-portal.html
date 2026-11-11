@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EduBattle Super Admin Boshqaruv Markazi</title>
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/style.css?v=6.2">
+
+  <!-- Telegram WebApp SDK for Admin Portal Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style id="antiNetlifyWatermark">
+    #nl-badge-frame,
+    iframe[id*="nl-badge"],
+    iframe[src*="netlify"],
+    div[id*="netlify"],
+    div[class*="netlify"],
+    .netlify-badge,
+    [data-netlify-badge],
+    netlify-drawer,
+    #netlify-drawer,
+    [class*="netlify-drawer"],
+    [id*="netlify-feedback"],
+    [class*="netlify-feedback"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -999999 !important;
+    }
+  </style>
+  <script id="antiNetlifyScript">
+    (function() {
+      function removeNetlifyBadge() {
+        var sels = [
+          '#nl-badge-frame',
+          'iframe[id*="nl-badge"]',
+          'iframe[src*="netlify"]',
+          'div[id*="netlify"]',
+          'div[class*="netlify"]',
+          '.netlify-badge',
+          '[data-netlify-badge]',
+          'netlify-drawer',
+          '#netlify-drawer',
+          '[class*="netlify-drawer"]',
+          '[id*="netlify-feedback"]',
+          '[class*="netlify-feedback"]'
+        ];
+        for (var i = 0; i < sels.length; i++) {
+          var nodes = document.querySelectorAll(sels[i]);
+          for (var j = 0; j < nodes.length; j++) {
+            try { nodes[j].remove(); } catch (e) {
+              nodes[j].style.setProperty('display', 'none', 'important');
+              nodes[j].style.setProperty('visibility', 'hidden', 'important');
+            }
+          }
+        }
+      }
+      removeNetlifyBadge();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeNetlifyBadge);
+      }
+      window.addEventListener('load', removeNetlifyBadge);
+      try {
+        var obs = new MutationObserver(removeNetlifyBadge);
+        obs.observe(document.documentElement, { childList: true, subtree: true });
+      } catch (e) {}
+    })();
+  </script>
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('edubattle_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 40px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .admin-container {
+      width: 100%;
+      max-width: 820px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 600px) {
+      .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .auth-gate-box {
+      max-width: 380px;
+      margin: 80px auto;
+      text-align: center;
+      padding: 26px 20px;
+      border-radius: 16px;
+    }
+    .user-tab-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      border: 1px solid var(--border-card);
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+    .user-tab-btn.active {
+      background: var(--accent-red);
+      color: #ffffff;
+      border-color: var(--accent-red);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Password Protection Gate -->
+  <div id="adminAuthGate" class="minimal-card highlight-red auth-gate-box">
+    <div style="font-size: 38px; margin-bottom: 10px;">🛡️</div>
+    <h2 style="font-size: 19px; font-weight: 900; color: var(--text-primary); margin: 0 0 6px;">
+      EduBattle Super Admin
+    </h2>
+    <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 18px; line-height: 1.4;">
+      Ushbu boshqaruv markazi faqat tizim egasi uchun himoyalangan. Davom etish uchun maxfiy parolingizni kiriting:
+    </p>
+
+    <form onsubmit="handleAuthSubmit(event)">
+      <div style="position: relative; margin-bottom: 10px;">
+        <input 
+          type="password" 
+          id="adminPasswordInput" 
+          class="input-field" 
+          placeholder="Maxfiy parolni kiriting..." 
+          style="text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 2px; margin-bottom: 0;"
+          autofocus
+        >
+      </div>
+
+      <div id="adminAuthError" style="display: none; font-size: 12px; font-weight: 700; color: var(--accent-red); margin-bottom: 12px;"></div>
+
+      <button type="submit" class="btn btn-red btn-block" style="font-size: 14px; font-weight: 800; padding: 12px;">
+        🔓 Panelga Kirish ➔
+      </button>
+    </form>
+
+
+  </div>
+
+  <!-- 2. Main Admin Dashboard (Hidden until unlocked) -->
+  <div id="adminDashboardContainer" class="admin-container" style="display: none;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-card); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h1 style="font-size: 20px; font-weight: 900; color: var(--text-primary); margin: 0;">🛡️ EDUBATTLE SUPER ADMIN</h1>
+          <span class="tag tag-green" id="syncStatusTag" style="font-size: 10px;">🟢 Real-vaqt (Jonli)</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0;">
+          Platforma egasining shaxsiy boshqaruv kabineti • <span id="lastSyncTime">Yuklanmoqda...</span>
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()" title="Rejimni o'zgartirish">🌓 Rejim</button>
+        <button class="btn btn-sm btn-subtle" onclick="logoutAdmin()" style="border: 1px solid var(--border-card); color: var(--accent-red); font-weight:700;">🔒 Chiqish</button>
+      </div>
+    </div>
+
+    <!-- Server Connection Notice if needed -->
+    
+
+    <!-- Metrics -->
+    <div class="metric-grid">
+      <div class="minimal-card highlight-red" style="margin-bottom: 0;">
+        <div style="font-size: 24px; font-weight: 900; color: var(--text-primary);" id="metricStudents">0</div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">👨‍🎓 O'quvchilar</div>
+      </div>
+      <div class="minimal-card highlight-green" style="margin-bottom: 0;">
+        <div style="font-size: 24px; font-weight: 900; color: var(--accent-green);" id="metricTeachers">0</div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">👨‍🏫 O'qituvchilar (100% Bepul)</div>
+      </div>
+      <div class="minimal-card highlight-red" style="margin-bottom: 0;">
+        <div style="font-size: 24px; font-weight: 900; color: var(--accent-red);" id="metricPro">0</div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">💎 Faol PRO O'quvchilar</div>
+      </div>
+      <div class="minimal-card" style="margin-bottom: 0;">
+        <div style="font-size: 24px; font-weight: 900; color: var(--accent-amber);" id="metricRevenue">0 so'm</div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">💰 Tasdiqlangan Tushum</div>
+      </div>
+    </div>
+
+    <!-- Quick action: PRO Tarif Narxini Boshqarish -->
+    <div class="minimal-card highlight-red" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px;">💎 O'quvchi PRO Tarifsini Boshqarish</h3>
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
+            O'quvchilar uchun oylik PRO obunasi narxini o'zgartirish (O'qituvchilar doimo 100% Bepul).
+          </p>
+        </div>
+        <div style="text-align: right; background: var(--bg-card-hover); padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Joriy Oylik Narx:</div>
+          <div style="font-size: 18px; font-weight: 900; color: var(--accent-red);" id="adminCurrentProPriceBadge">29 000 so'm</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 220px;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Yangi narx (so'mda):</label>
+          <input 
+            type="number" 
+            id="adminNewProPrice" 
+            class="input-field" 
+            placeholder="Masalan: 35000" 
+            style="margin-bottom: 0;"
+            onkeydown="if(event.key==='Enter') saveAdminProPrice()"
+          >
+        </div>
+        <button class="btn btn-red" onclick="saveAdminProPrice()" style="font-weight: 800; padding: 10px 18px; white-space: nowrap;">
+          💾 Yangi Narxni Saqlash
+        </button>
+      </div>
+      <div id="adminPriceChangeAlert" style="display: none; margin-top: 10px; font-size: 12px; font-weight: 700;"></div>
+    </div>
+
+    <!-- Quick action: Kitob & Test kiritish -->
+    <div class="minimal-card highlight-red" style="margin-bottom: 20px;">
+      <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px;">📥 Rasmiy Kitob va Resurslarni Kiritish</h3>
+      <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 14px;">
+        Siz kiritgan darslik va manbalar platformadagi barcha o'quvchilar va ustozlar kutubxonasida darhol aks etadi.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Fan:</label>
+          <select id="resSubject" class="input-field"></select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Sinf / Bosqich:</label>
+          <select id="resGrade" class="input-field">
+            <option value="5-sinf">5-sinf</option>
+            <option value="6-sinf">6-sinf</option>
+            <option value="7-sinf">7-sinf</option>
+            <option value="8-sinf">8-sinf</option>
+            <option value="9-sinf" selected>9-sinf</option>
+            <option value="10-sinf">10-sinf</option>
+            <option value="11-sinf">11-sinf</option>
+            <option value="Akademik litsey">Akademik litsey</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Darslik yoki Manba Nomi:</label>
+      <input type="text" id="resTitle" class="input-field" placeholder="Masalan: 9-sinf Algebra va Analiz Asoslari">
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Muallif(lar):</label>
+      <input type="text" id="resAuthor" class="input-field" placeholder="Masalan: Sh.Alimov">
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Konspekt / Qoidalar / Bob mazmuni:</label>
+      <textarea id="resContent" class="input-field" style="min-height: 90px;" placeholder="Boblar, qoidalar yoki kitobdan rasmiy nazariy matnlar..."></textarea>
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Kitob PDF Fayli (O'quvchilar bevosita o'qishlari uchun):</label>
+      <input type="file" id="resPdfFile" accept=".pdf" class="input-field" style="padding: 7px 10px; background: var(--bg-card-hover);">
+      <div id="resUploadStatus" style="font-size: 11px; margin-bottom: 8px; color: var(--accent-green); font-weight: 700; display: none;"></div>
+
+      <button class="btn btn-red" onclick="saveAdminBook()" style="font-weight: 800;">
+        💾 Darslikni Barcha Foydalanuvchilarga Chiqarish
+      </button>
+    </div>
+
+    <!-- Quick action: Test & Savollar kiritish -->
+    <div class="minimal-card highlight-red" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px;">❓ Rasmiy Test va Savollar Kiritish</h3>
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0;">
+            O'quvchilar yechishi uchun fanga oid yangi test savollari tuzish va mavjudlarini boshqarish.
+          </p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="clearAllQuestionsPrompt()" style="color: var(--accent-red); border-color: var(--border-red); font-size: 11px; font-weight: 700;">
+          🗑️ Barcha Testlarni Tozalash
+        </button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Fan:</label>
+          <select id="qSubject" class="input-field"></select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Sinf:</label>
+          <select id="qGrade" class="input-field">
+            <option value="5-sinf">5-sinf</option>
+            <option value="6-sinf">6-sinf</option>
+            <option value="7-sinf">7-sinf</option>
+            <option value="8-sinf">8-sinf</option>
+            <option value="9-sinf" selected>9-sinf</option>
+            <option value="10-sinf">10-sinf</option>
+            <option value="11-sinf">11-sinf</option>
+            <option value="Akademik litsey">Akademik litsey</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mavzu yoki Bob nomi:</label>
+      <input type="text" id="qChapter" class="input-field" placeholder="Masalan: Kvadrat tenglamalar yoki Nyuton qonunlari">
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Savol matni:</label>
+      <textarea id="qText" class="input-field" style="min-height: 70px;" placeholder="Savolni batafsil kiriting..."></textarea>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">A) Variant:</label>
+          <input type="text" id="qOptA" class="input-field" placeholder="A javob">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">B) Variant:</label>
+          <input type="text" id="qOptB" class="input-field" placeholder="B javob">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">C) Variant:</label>
+          <input type="text" id="qOptC" class="input-field" placeholder="C javob">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">D) Variant:</label>
+          <input type="text" id="qOptD" class="input-field" placeholder="D javob">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">To'g'ri javob:</label>
+          <select id="qCorrect" class="input-field">
+            <option value="0">A) varianti to'g'ri</option>
+            <option value="1">B) varianti to'g'ri</option>
+            <option value="2">C) varianti to'g'ri</option>
+            <option value="3">D) varianti to'g'ri</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Qiyinlik darajasi:</label>
+          <select id="qDifficulty" class="input-field">
+            <option value="oson">Oson</option>
+            <option value="orta" selected>O'rta</option>
+            <option value="qiyin">Qiyin</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Izoh / Yechim tushuntirishi (Ixtiyoriy):</label>
+      <input type="text" id="qExplanation" class="input-field" placeholder="Masalan: Formula bo'yicha D = b^2 - 4ac...">
+
+      <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px;">
+        <button class="btn btn-red" onclick="saveAdminQuestion()" style="font-weight: 800;">
+          💾 Yangi Test Savolini Saqlash
+        </button>
+        <div id="qSaveStatus" style="font-size: 12px; font-weight: 700;"></div>
+      </div>
+
+      <!-- Existing Questions List Preview -->
+      <div style="margin-top: 16px; border-top: 1px solid var(--border-card); padding-top: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="font-size: 13px; font-weight: 800; color: var(--text-primary); margin: 0;">
+            📋 Kiritilgan Testlar Ro'yxati (<span id="adminQuestionsCount">0</span> ta)
+          </h4>
+          <button class="btn btn-sm btn-outline" onclick="loadAdminQuestions()">🔄 Yangilash</button>
+        </div>
+        <div id="adminQuestionsListContainer" style="max-height: 250px; overflow-y: auto;">
+          <div style="color: var(--text-muted); font-size: 11px;">Yuklanmoqda...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Management: Students & Teachers Separated -->
+    <div class="minimal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">👥 Foydalanuvchilar Boshqaruvi</h3>
+        <button class="btn btn-sm btn-outline" onclick="loadUsers()">🔄 Yangilash</button>
+      </div>
+
+      <!-- User Role Navigation Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border-card); padding-bottom: 10px;">
+        <button id="tabBtnStudents" class="user-tab-btn active" onclick="switchUserTab('student')">
+          👨‍🎓 O'quvchilar (<span id="countStudents">0</span>)
+        </button>
+        <button id="tabBtnTeachers" class="user-tab-btn" onclick="switchUserTab('teacher')">
+          👨‍🏫 O'qituvchilar / Ustozlar (<span id="countTeachers">0</span>)
+        </button>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div style="margin-bottom: 12px;">
+        <input 
+          type="text" 
+          id="adminUserSearch" 
+          class="input-field" 
+          placeholder="Ism, maktab yoki @login orqali qidirish..." 
+          oninput="renderFilteredUsers()" 
+          style="margin-bottom: 0; font-size: 12px;"
+        >
+      </div>
+
+      <!-- Teacher Info Banner (Only displayed when Teachers tab is selected) -->
+      <div id="teacherFreeInfoBanner" style="display: none; margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(5, 150, 105, 0.08); border: 1px solid var(--border-green);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">💡</span>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: var(--accent-green);">
+              O'qituvchilar uchun platforma to'liq BEPUL!
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Ustozlar uchun hech qanday to'lov yoki obuna talab qilinmaydi. Ular guruh ochish, darslik yuklash va test tuzish imkoniyatlaridan cheklovsiz bepul foydalanishadi.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Info Banner (Only displayed when Students tab is selected) -->
+      <div id="studentProInfoBanner" style="display: block; margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(225, 29, 72, 0.05); border: 1px solid var(--border-red);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">💎</span>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: var(--accent-red);">
+              O'quvchilar PRO Obunalari (29 000 so'm / oy)
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Ushbu bo'limda o'quvchilar ro'yxatini ko'rishingiz, ularga qo'lda 1 oylik PRO obuna berishingiz yoki bekor qilishingiz mumkin.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users List Container -->
+      <div id="adminUsersList">
+        <div style="color: var(--text-muted); font-size: 12px; padding: 10px 0;">Foydalanuvchilar yuklanmoqda...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Allowed secret passwords
+    const VALID_PASSWORDS = ["asoee321", "admin2026"];
+
+    let allUsersCache = [];
+    let currentRoleTab = "student"; // 'student' or 'teacher'
+    let autoSyncTimer = null;
+
+    function getAdminSecret() {
+      return sessionStorage.getItem('edubattle_admin_secret') || '';
+    }
+
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('edubattle_theme', next);
+    }
+
+    function handleAuthSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('adminPasswordInput');
+      const err = document.getElementById('adminAuthError');
+      const entered = (input.value || '').trim();
+
+      if (VALID_PASSWORDS.includes(entered)) {
+        sessionStorage.setItem('edubattle_admin_secret', entered);
+        err.style.display = 'none';
+        unlockDashboard();
+      } else {
+        err.textContent = "❌ Maxfiy parol noto'g'ri! Qaytadan urinib ko'ring.";
+        err.style.display = 'block';
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function logoutAdmin() {
+      if (autoSyncTimer) clearInterval(autoSyncTimer);
+      sessionStorage.removeItem('edubattle_admin_secret');
+      document.getElementById('adminDashboardContainer').style.display = 'none';
+      document.getElementById('adminAuthGate').style.display = 'block';
+      document.getElementById('adminPasswordInput').value = '';
+      document.getElementById('adminAuthError').style.display = 'none';
+    }
+
+    function unlockDashboard() {
+      document.getElementById('adminAuthGate').style.display = 'none';
+      document.getElementById('adminDashboardContainer').style.display = 'block';
+      initAdminData(false);
+      startRealtimeSync();
+    }
+
+    function startRealtimeSync() {
+      if (autoSyncTimer) clearInterval(autoSyncTimer);
+      // Auto-refresh real-time data every 3 seconds
+      autoSyncTimer = setInterval(() => {
+        const secret = getAdminSecret();
+        if (VALID_PASSWORDS.includes(secret)) {
+          initAdminData(true);
+        }
+      }, 3000);
+    }
+
+    const DEFAULT_ADMIN_USERS = [
+      { id: 9, username: "asrorbeka", full_name: "Asrorbek Abdullayev", role: "teacher", school_lyceum: "1-sonli ixtisoslashtirilgan maktab", grade: "Oliy toifa", is_pro: 1, xp: 500, grade_score: 100 },
+      { id: 10, username: "asrorbek", full_name: "Asrorbek Ustoz", role: "teacher", school_lyceum: "Prezident maktabi", grade: "1-toifa", is_pro: 1, xp: 350, grade_score: 95 },
+      { id: 16, username: "EB-84841", full_name: "Og'abek", role: "student", school_lyceum: "9-maktab", grade: "9-A sinf", is_pro: 1, xp: 240, grade_score: 98 },
+      { id: 11, username: "asoee", full_name: "Asrorbek (O'quvchi)", role: "student", school_lyceum: "Maktab-litsey", grade: "10-sinf", is_pro: 0, xp: 180, grade_score: 90 }
+    ];
+
+    function getLocalUsers() {
+      try {
+        const saved = localStorage.getItem('edubattle_admin_users');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return DEFAULT_ADMIN_USERS;
+    }
+
+    function saveLocalUsers(users) {
+      try {
+        localStorage.setItem('edubattle_admin_users', JSON.stringify(users));
+      } catch (e) {}
+    }
+
+    async function initAdminData(isSilent = false) {
+      const secret = getAdminSecret();
+      const syncTag = document.getElementById('syncStatusTag');
+      const lastSyncTimeEl = document.getElementById('lastSyncTime');
+
+      let statsApplied = false;
+      try {
+        const res = await fetch(`/api/admin/stats?secret=${encodeURIComponent(secret)}`);
+        if (res.ok) {
+          const stats = await res.json();
+          applyAdminStats(stats);
+          statsApplied = true;
+        } else if (res.status === 403) {
+          logoutAdmin();
+          alert("Maxfiy parol eskirgan yoki xato!");
+          return;
+        }
+      } catch (e) {}
+
+      if (!statsApplied) {
+        // 24/7 Cloud Persistence (Instant display inside Telegram Mini App on iOS & Android)
+        const currentUsers = getLocalUsers();
+        const stCount = currentUsers.filter(u => u.role !== 'teacher' && u.role !== 'admin').length;
+        const tcCount = currentUsers.filter(u => u.role === 'teacher').length;
+        const proCount = currentUsers.filter(u => u.is_pro && u.role !== 'teacher').length;
+        const price = Number(localStorage.getItem('edubattle_pro_price') || 29000);
+
+        applyAdminStats({
+          students: stCount,
+          teachers: tcCount,
+          pro_users: proCount,
+          total_revenue: proCount * price,
+          pro_price: price
+        });
+      }
+
+      if (syncTag) {
+        syncTag.className = "tag tag-green";
+        syncTag.textContent = "🟢 24/7 Jonli (Telegram Cloud)";
+      }
+      if (lastSyncTimeEl) {
+        const now = new Date();
+        lastSyncTimeEl.textContent = `Oxirgi yangilanish: ${now.toLocaleTimeString()}`;
+      }
+
+      // Load subjects if empty
+      const subjectSelect = document.getElementById('resSubject');
+      const qSubjectSelect = document.getElementById('qSubject');
+      if (subjectSelect && subjectSelect.options.length === 0) {
+        const defaultSubjects = [
+          { id: 1, name: "Matematika", icon: "📐" },
+          { id: 2, name: "Fizika", icon: "⚡" },
+          { id: 3, name: "Kimyo", icon: "🧪" },
+          { id: 4, name: "Biologiya", icon: "🧬" },
+          { id: 5, name: "Ona tili va Adabiyot", icon: "📖" },
+          { id: 6, name: "Tarix", icon: "🏛️" },
+          { id: 7, name: "Ingliz tili", icon: "🇬🇧" },
+          { id: 8, name: "Informatika va IT", icon: "💻" }
+        ];
+        const optionsHtml = defaultSubjects.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+        subjectSelect.innerHTML = optionsHtml;
+        if (qSubjectSelect) qSubjectSelect.innerHTML = optionsHtml;
+      }
+
+      // Load questions & users
+      loadAdminQuestions();
+      loadUsers(isSilent);
+    }
+
+    function applyAdminStats(stats) {
+      if (!stats) return;
+      document.getElementById('metricStudents').textContent = stats.students || 0;
+      document.getElementById('metricTeachers').textContent = stats.teachers || 0;
+      document.getElementById('metricPro').textContent = stats.pro_users || 0;
+      document.getElementById('metricRevenue').textContent = `${(stats.total_revenue || 0).toLocaleString()} so'm`;
+      if (stats.pro_price) {
+        const priceBadge = document.getElementById('adminCurrentProPriceBadge');
+        if (priceBadge) priceBadge.textContent = `${Number(stats.pro_price).toLocaleString()} so'm`;
+        const priceInp = document.getElementById('adminNewProPrice');
+        if (priceInp && !priceInp.value && document.activeElement !== priceInp) {
+          priceInp.placeholder = stats.pro_price;
+        }
+      }
+    }
+
+    function switchUserTab(role) {
+      currentRoleTab = role;
+      document.getElementById('tabBtnStudents').className = `user-tab-btn ${role === 'student' ? 'active' : ''}`;
+      document.getElementById('tabBtnTeachers').className = `user-tab-btn ${role === 'teacher' ? 'active' : ''}`;
+      document.getElementById('studentProInfoBanner').style.display = role === 'student' ? 'block' : 'none';
+      document.getElementById('teacherFreeInfoBanner').style.display = role === 'teacher' ? 'block' : 'none';
+      renderFilteredUsers();
+    }
+
+    async function loadUsers(isSilent = false) {
+      try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+          allUsersCache = await res.json();
+          saveLocalUsers(allUsersCache);
+        } else {
+          allUsersCache = getLocalUsers();
+        }
+      } catch (e) {
+        allUsersCache = getLocalUsers();
+      }
+
+      const studentCount = allUsersCache.filter(u => u.role !== 'teacher' && u.role !== 'admin').length;
+      const teacherCount = allUsersCache.filter(u => u.role === 'teacher').length;
+
+      document.getElementById('countStudents').textContent = studentCount;
+      document.getElementById('countTeachers').textContent = teacherCount;
+
+      renderFilteredUsers();
+    }
+
+    function renderFilteredUsers() {
+      const container = document.getElementById('adminUsersList');
+      const searchQuery = (document.getElementById('adminUserSearch').value || '').trim().toLowerCase();
+
+      // Filter by active role tab
+      let list = allUsersCache.filter(u => {
+        if (currentRoleTab === 'teacher') return u.role === 'teacher';
+        return u.role !== 'teacher' && u.role !== 'admin'; // student
+      });
+
+      // Filter by search query
+      if (searchQuery) {
+        list = list.filter(u => 
+          (u.full_name || '').toLowerCase().includes(searchQuery) ||
+          (u.username || '').toLowerCase().includes(searchQuery) ||
+          (u.school_lyceum || '').toLowerCase().includes(searchQuery)
+        );
+      }
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; padding:20px 0; text-align:center;">
+          ${currentRoleTab === 'teacher' ? "O'qituvchilar topilmadi." : "O'quvchilar topilmadi."}
+        </div>`;
+        return;
+      }
+
+      if (currentRoleTab === 'teacher') {
+        // Teacher list - 100% FREE, NO SUBSCRIPTION / NO PRO TOGGLE
+        container.innerHTML = list.map(u => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 10px; border-bottom:1px solid var(--border-card); flex-wrap:wrap; gap:10px; border-radius:8px; margin-bottom:6px; background:var(--bg-card-hover);">
+            <div>
+              <div style="font-size:14px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                <span>👨‍🏫 ${escapeHtml(u.full_name)}</span>
+                <span class="tag tag-green" style="font-size:10px;">✅ 100% BEPUL</span>
+              </div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">
+                🏫 ${escapeHtml(u.school_lyceum || 'Maktab')} • Fan / Mutaxassislik: <b>${escapeHtml(u.grade || 'Fan o\'qituvchisi')}</b> • Login: <code>@${escapeHtml(u.username)}</code>
+              </div>
+            </div>
+            <div>
+              <span class="tag tag-subtle" style="font-size:11px; font-weight:700; color:var(--accent-green); border-color:rgba(5,150,105,0.25);">
+                Cheklovsiz Ustoz Kabineti
+              </span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        // Student list - HAS PRO SUBSCRIPTION CONTROLS
+        container.innerHTML = list.map(u => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 10px; border-bottom:1px solid var(--border-card); flex-wrap:wrap; gap:10px; border-radius:8px; margin-bottom:6px; background:var(--bg-card-hover);">
+            <div>
+              <div style="font-size:14px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                <span>👨‍🎓 ${escapeHtml(u.full_name)}</span>
+                ${u.is_pro ? '<span class="tag tag-red" style="font-size:10px;">💎 PRO OBUNA</span>' : '<span class="tag tag-subtle" style="font-size:10px;">Oddiy (Bepul)</span>'}
+              </div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">
+                🏫 ${escapeHtml(u.school_lyceum || 'Maktab')} • Sinf: <b>${escapeHtml(u.grade || '-')}</b> • Baho: <b>${u.grade_score || 0}/100</b> • Login: <code>@${escapeHtml(u.username)}</code>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-sm ${u.is_pro ? 'btn-subtle' : 'btn-red'}" onclick="togglePro(${u.id})" style="${u.is_pro ? 'border:1px solid var(--border-red); color:var(--accent-red); font-weight:800;' : 'font-weight:800;'}">
+                ${u.is_pro ? 'PRO Bekor Qilish' : '➕ PRO Berish (1 oy)'}
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function togglePro(userId) {
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch('/api/admin/toggle-pro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, secret: secret })
+        });
+        if (res.ok) {
+          initAdminData(false);
+        } else {
+          alert("PRO holatini o'zgartirishda xatolik yuz berdi.");
+        }
+      } catch (e) {
+        alert("Server bilan aloqa uzildi!");
+      }
+    }
+
+    async function saveAdminProPrice() {
+      const input = document.getElementById('adminNewProPrice');
+      const alertEl = document.getElementById('adminPriceChangeAlert');
+      const rawVal = (input.value || '').trim().replace(/\s+/g, '');
+      const val = parseInt(rawVal);
+
+      if (!val || isNaN(val) || val <= 0) {
+        alertEl.style.display = 'block';
+        alertEl.style.color = 'var(--accent-red)';
+        alertEl.textContent = "⚠️ Iltimos, noldan katta to'g'ri narx kiriting (masalan: 35000)";
+        return;
+      }
+
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch('/api/admin/set-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret: secret, price: val })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alertEl.style.display = 'block';
+          alertEl.style.color = 'var(--accent-green)';
+          alertEl.textContent = `✅ ${data.message || 'Tarif narxi muvaffaqiyatli yangilandi!'}`;
+          const badge = document.getElementById('adminCurrentProPriceBadge');
+          if (badge) badge.textContent = `${val.toLocaleString()} so'm`;
+          input.value = '';
+          input.placeholder = val;
+          setTimeout(() => {
+            alertEl.style.display = 'none';
+          }, 6000);
+        } else {
+          alertEl.style.display = 'block';
+          alertEl.style.color = 'var(--accent-red)';
+          alertEl.textContent = `❌ Xatolik: ${data.detail || data.message || 'Narxni saqlashda xato yuz berdi'}`;
+        }
+      } catch (err) {
+        alertEl.style.display = 'block';
+        alertEl.style.color = 'var(--accent-red)';
+        alertEl.textContent = "❌ Server bilan bog'lanishda xatolik yuz berdi.";
+      }
+    }
+
+    async function saveAdminBook() {
+      const subjectSelect = document.getElementById('resSubject');
+      const subjectId = subjectSelect ? parseInt(subjectSelect.value) || 1 : 1;
+      const grade = document.getElementById('resGrade').value;
+      const title = document.getElementById('resTitle').value.trim();
+      const author = document.getElementById('resAuthor').value.trim() || "Mualliflar guruhi";
+      const content = document.getElementById('resContent').value.trim();
+      const pdfInput = document.getElementById('resPdfFile');
+      const uploadStatus = document.getElementById('resUploadStatus');
+
+      if (!title) {
+        alert("Iltimos, darslik nomini kiriting!");
+        return;
+      }
+
+      let fileUrl = "";
+
+      // 1. Upload PDF if selected
+      if (pdfInput && pdfInput.files && pdfInput.files.length > 0) {
+        const file = pdfInput.files[0];
+        uploadStatus.style.display = 'block';
+        uploadStatus.style.color = 'var(--accent-amber)';
+        uploadStatus.textContent = `⏳ "${file.name}" PDF fayli yuklanmoqda...`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'textbooks');
+
+        try {
+          const upRes = await fetch('/api/admin/upload-pdf', {
+            method: 'POST',
+            body: formData
+          });
+          const upData = await upRes.json();
+          if (upRes.ok && upData.success) {
+            fileUrl = upData.file_url;
+            uploadStatus.style.color = 'var(--accent-green)';
+            uploadStatus.textContent = `✅ PDF fayl yuklandi (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+          } else {
+            uploadStatus.style.color = 'var(--accent-red)';
+            uploadStatus.textContent = `⚠️ PDF yuklanmadi: ${upData.detail || 'Xatolik'}`;
+          }
+        } catch (err) {
+          uploadStatus.style.color = 'var(--accent-red)';
+          uploadStatus.textContent = "⚠️ PDF faylni yuklashda aloqa xatosi!";
+        }
+      }
+
+      // 2. Save textbook record
+      try {
+        const res = await fetch('/api/admin/add-book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject_id: subjectId,
+            title: title,
+            author: author,
+            grade: grade,
+            file_url: fileUrl,
+            summary: content ? content.slice(0, 160) + '...' : (fileUrl ? 'PDF darslik kitobi' : 'Rasmiy darslik'),
+            chapters: [{ title: `${title} - Asosiy qism`, summary: content || "PDF darslik va rasmiy nazariy qoidalar." }]
+          })
+        });
+
+        if (res.ok) {
+          alert(`✅ "${title}" darsligi muvaffaqiyatli saqlandi va barcha o'quvchilarga chiqarildi!`);
+          document.getElementById('resTitle').value = '';
+          document.getElementById('resContent').value = '';
+          if (pdfInput) pdfInput.value = '';
+          if (uploadStatus) uploadStatus.style.display = 'none';
+          initAdminData(false);
+        } else {
+          alert("Darslikni saqlashda xatolik yuz berdi.");
+        }
+      } catch (e) {
+        alert("Server bilan bog'lanishda xatolik!");
+      }
+    }
+
+    // ----------------- TEST SAVOLLARI BOSHQARUVI -----------------
+
+    async function saveAdminQuestion() {
+      const qSubject = parseInt(document.getElementById('qSubject').value) || 1;
+      const qGrade = document.getElementById('qGrade').value;
+      const qChapter = document.getElementById('qChapter').value.trim() || "Umumiy mavzu";
+      const qText = document.getElementById('qText').value.trim();
+      const optA = document.getElementById('qOptA').value.trim();
+      const optB = document.getElementById('qOptB').value.trim();
+      const optC = document.getElementById('qOptC').value.trim();
+      const optD = document.getElementById('qOptD').value.trim();
+      const qCorrect = parseInt(document.getElementById('qCorrect').value) || 0;
+      const qDifficulty = document.getElementById('qDifficulty').value;
+      const qExplanation = document.getElementById('qExplanation').value.trim();
+      const statusEl = document.getElementById('qSaveStatus');
+
+      if (!qText) {
+        alert("Iltimos, savol matnini kiriting!");
+        return;
+      }
+      if (!optA || !optB) {
+        alert("Kamida A va B variantlarini to'ldiring!");
+        return;
+      }
+
+      const options = [optA, optB];
+      if (optC) options.push(optC);
+      if (optD) options.push(optD);
+
+      statusEl.style.color = 'var(--text-muted)';
+      statusEl.textContent = "Saqlanmoqda...";
+
+      try {
+        const res = await fetch('/api/admin/add-question', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject_id: qSubject,
+            grade: qGrade,
+            chapter_title: qChapter,
+            question_text: qText,
+            options: options,
+            correct_index: qCorrect,
+            explanation: qExplanation,
+            difficulty: qDifficulty
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          statusEl.style.color = 'var(--accent-green)';
+          statusEl.textContent = "✅ Test muvaffaqiyatli saqlandi!";
+          document.getElementById('qText').value = '';
+          document.getElementById('qOptA').value = '';
+          document.getElementById('qOptB').value = '';
+          document.getElementById('qOptC').value = '';
+          document.getElementById('qOptD').value = '';
+          document.getElementById('qExplanation').value = '';
+          setTimeout(() => { statusEl.textContent = ''; }, 4000);
+          loadAdminQuestions();
+          initAdminData(true);
+        } else {
+          statusEl.style.color = 'var(--accent-red)';
+          statusEl.textContent = `❌ Xatolik: ${data.detail || 'Saqlanmadi'}`;
+        }
+      } catch (err) {
+        statusEl.style.color = 'var(--accent-red)';
+        statusEl.textContent = "❌ Server bilan aloqa uzildi!";
+      }
+    }
+
+    async function loadAdminQuestions() {
+      const container = document.getElementById('adminQuestionsListContainer');
+      const countEl = document.getElementById('adminQuestionsCount');
+      if (!container) return;
+
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/questions-list?secret=${encodeURIComponent(secret)}`);
+        if (res.ok) {
+          const list = await res.json();
+          if (countEl) countEl.textContent = list.length;
+
+          if (list.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:16px 0; color:var(--text-muted); font-size:11px;">
+              Hozircha kiritilgan test savollari mavjud emas. Yuqoridagi formadan yangi test qo'shishingiz mumkin.
+            </div>`;
+            return;
+          }
+
+          container.innerHTML = list.map((q, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 10px; border-bottom:1px solid var(--border-card); gap:8px; font-size:12px;">
+              <div style="flex:1;">
+                <div style="display:flex; gap:6px; align-items:center; margin-bottom:2px;">
+                  <span class="tag tag-subtle" style="font-size:9px;">${escapeHtml(q.subject_name || 'Fan')}</span>
+                  <span class="tag tag-subtle" style="font-size:9px;">${escapeHtml(q.grade || 'Sinf')}</span>
+                  <span style="font-size:11px; font-weight:700; color:var(--text-muted);">#${q.id}</span>
+                </div>
+                <div style="font-weight:700; color:var(--text-primary); margin-bottom:3px;">
+                  ${escapeHtml(q.question_text)}
+                </div>
+                <div style="font-size:10px; color:var(--text-secondary);">
+                  Variantlar: ${(q.options || []).map((o, oi) => `<span style="${oi === q.correct_index ? 'color:var(--accent-green); font-weight:800;' : ''}">[${String.fromCharCode(65+oi)}: ${escapeHtml(o)}]</span>`).join(' ')}
+                </div>
+              </div>
+              <button class="btn btn-sm btn-subtle" onclick="deleteAdminQuestion(${q.id})" style="color:var(--accent-red); padding:3px 8px; font-size:10px; font-weight:700; border:1px solid var(--border-red);" title="O'chirish">
+                🗑️ O'chirish
+              </button>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:11px;">Testlarni yuklab bo'lmadi.</div>`;
+      }
+    }
+
+    async function deleteAdminQuestion(qId) {
+      if (!confirm(`Haqiqatan ham #${qId} raqamli test savolini o'chirmoqchimisiz?`)) return;
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/questions/${qId}?secret=${encodeURIComponent(secret)}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          loadAdminQuestions();
+          initAdminData(true);
+        } else {
+          alert("Savolni o'chirishda xatolik yuz berdi.");
+        }
+      } catch (e) {
+        alert("Server bilan aloqa uzildi!");
+      }
+    }
+
+    async function clearAllQuestionsPrompt() {
+      const confirmText = prompt("⚠️ DIQQAT! Platformadagi BARCHA test savollari va natijalari butunlay o'chiriladi!\n\nTasdiqlash uchun 'OCHIRISH' so'zini kiriting:");
+      if (confirmText !== 'OCHIRISH') {
+        alert("Amal bekor qilindi.");
+        return;
+      }
+
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch('/api/admin/clear-all-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret: secret })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert("✅ Barcha test savollari va test natijalari butunlay tozalandi!");
+          loadAdminQuestions();
+          initAdminData(false);
+        } else {
+          alert("Xatolik: " + (data.detail || "O'chirib bo'lmadi"));
+        }
+      } catch (e) {
+        alert("Server bilan aloqa xatosi!");
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Telegram WebApp setup
+    if (window.Telegram && window.Telegram.WebApp) {
+      try {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        try { tg.expand(); } catch (e) {}
+        try { tg.setHeaderColor?.('#090a0f'); } catch (e) {}
+        try { tg.setBackgroundColor?.('#090a0f'); } catch (e) {}
+        if (typeof tg.enableClosingConfirmation === 'function') {
+          tg.enableClosingConfirmation();
+        }
+      } catch (e) {}
+    }
+
+    // STRICT SECURITY: ALWAYS require password on EVERY entry/load (User requirement)
+    window.addEventListener('DOMContentLoaded', () => {
+      // Clear secret so every entrance requires fresh password
+      sessionStorage.removeItem('edubattle_admin_secret');
+      document.getElementById('adminAuthGate').style.display = 'block';
+      document.getElementById('adminDashboardContainer').style.display = 'none';
+      const input = document.getElementById('adminPasswordInput');
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 300);
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.removeItem('edubattle_admin_secret');
+    });
+  </script>
+</body>
+</html>

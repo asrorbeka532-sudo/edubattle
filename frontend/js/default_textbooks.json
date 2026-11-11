@@ -1,0 +1,444 @@
+[
+  {
+    "id": 1,
+    "title": "6-sinf Matematika Darsligi",
+    "author": "M. Mirzaahmedov",
+    "grade": "6-sinf",
+    "subject_id": 1,
+    "subject_name": "Matematika",
+    "subject_icon": "📐",
+    "file_url": "/uploads/textbooks/matematika_6_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 6-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "8-sinf Geometriya Darsligi",
+    "author": "A. Rahimov",
+    "grade": "8-sinf",
+    "subject_id": 1,
+    "subject_name": "Matematika",
+    "subject_icon": "📐",
+    "file_url": "/uploads/textbooks/geometriya_8_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 8-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "11-sinf Matematika (2-qism)",
+    "author": "Sh. Alimov",
+    "grade": "11-sinf",
+    "subject_id": 1,
+    "subject_name": "Matematika",
+    "subject_icon": "📐",
+    "file_url": "/uploads/textbooks/matematika_2qism_11_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 11-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "7-sinf Kimyo Darsligi",
+    "author": "I. Asqarov",
+    "grade": "7-sinf",
+    "subject_id": 3,
+    "subject_name": "Kimyo",
+    "subject_icon": "🧪",
+    "file_url": "/uploads/textbooks/kimyo_7_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 7-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "8-sinf Kimyo Darsligi",
+    "author": "I. Asqarov",
+    "grade": "8-sinf",
+    "subject_id": 3,
+    "subject_name": "Kimyo",
+    "subject_icon": "🧪",
+    "file_url": "/uploads/textbooks/kimyo_8_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 8-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "9-sinf Kimyo Darsligi",
+    "author": "I. Asqarov",
+    "grade": "9-sinf",
+    "subject_id": 3,
+    "subject_name": "Kimyo",
+    "subject_icon": "🧪",
+    "file_url": "/uploads/textbooks/kimyo_9_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 9-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "9-sinf Biologiya Darsligi",
+    "author": "A. Zikiryayev",
+    "grade": "9-sinf",
+    "subject_id": 4,
+    "subject_name": "Biologiya",
+    "subject_icon": "🧬",
+    "file_url": "/uploads/textbooks/biologiya_9_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 9-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "11-sinf Biologiya Darsligi",
+    "author": "A. G'ofurov",
+    "grade": "11-sinf",
+    "subject_id": 4,
+    "subject_name": "Biologiya",
+    "subject_icon": "🧬",
+    "file_url": "/uploads/textbooks/biologiya_11_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 11-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "6-sinf Ona tili Darsligi",
+    "author": "N. Mahmudov",
+    "grade": "6-sinf",
+    "subject_id": 5,
+    "subject_name": "Ona tili va Adabiyot",
+    "subject_icon": "📚",
+    "file_url": "/uploads/textbooks/ona_tili_6_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 6-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "7-sinf Ona tili Darsligi",
+    "author": "N. Mahmudov",
+    "grade": "7-sinf",
+    "subject_id": 5,
+    "subject_name": "Ona tili va Adabiyot",
+    "subject_icon": "📚",
+    "file_url": "/uploads/textbooks/ona_tili_7_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 7-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "title": "8-sinf Ona tili Darsligi",
+    "author": "N. Mahmudov",
+    "grade": "8-sinf",
+    "subject_id": 5,
+    "subject_name": "Ona tili va Adabiyot",
+    "subject_icon": "📚",
+    "file_url": "/uploads/textbooks/ona_tili_8_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 8-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "title": "9-sinf Ona tili Darsligi",
+    "author": "N. Mahmudov",
+    "grade": "9-sinf",
+    "subject_id": 5,
+    "subject_name": "Ona tili va Adabiyot",
+    "subject_icon": "📚",
+    "file_url": "/uploads/textbooks/ona_tili_9_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 9-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "title": "6-sinf Qadimgi dunyo tarixi",
+    "author": "A. Sagdullayev",
+    "grade": "6-sinf",
+    "subject_id": 6,
+    "subject_name": "Tarix",
+    "subject_icon": "🏛️",
+    "file_url": "/uploads/textbooks/qadimgi_dunyo_tarixi_6_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 6-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "title": "7-sinf O'zbekiston tarixi",
+    "author": "Q. Rajabov",
+    "grade": "7-sinf",
+    "subject_id": 6,
+    "subject_name": "Tarix",
+    "subject_icon": "🏛️",
+    "file_url": "/uploads/textbooks/ozbekiston_tarixi_7_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 7-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "title": "10-sinf O'zbekiston tarixi",
+    "author": "Q. Rajabov",
+    "grade": "10-sinf",
+    "subject_id": 6,
+    "subject_name": "Tarix",
+    "subject_icon": "🏛️",
+    "file_url": "/uploads/textbooks/ozbekiston_tarixi_10_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 10-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "title": "10-sinf Davlat va huquq asoslari",
+    "author": "O'. Tojixonov",
+    "grade": "10-sinf",
+    "subject_id": 6,
+    "subject_name": "Tarix",
+    "subject_icon": "🏛️",
+    "file_url": "/uploads/textbooks/davlat_va_huquq_asoslari_10_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 10-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "title": "11-sinf O'zbekiston tarixi",
+    "author": "Q. Rajabov",
+    "grade": "11-sinf",
+    "subject_id": 6,
+    "subject_name": "Tarix",
+    "subject_icon": "🏛️",
+    "file_url": "/uploads/textbooks/ozbekiston_tarixi_11_uzb.pdf",
+    "summary": "O'zbekiston Respublikasi Xalq ta'limi vazirligi tomonidan tasdiqlangan rasmiy umumta'lim maktabi 11-sinf darsligi.",
+    "uploader_name": "EduBattle Ta'lim",
+    "chapters": [
+      {
+        "title": "1-bob. Kirish va asosiy tushunchalar",
+        "summary": "Mavzu bo'yicha fundamental bilimlar va amaliy qoidalar."
+      },
+      {
+        "title": "2-bob. Asosiy bo'lim va masalalar",
+        "summary": "Nazariy qoidalar va misollar yechimi."
+      },
+      {
+        "title": "3-bob. Mustahkamlash va xulosalar",
+        "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
+      }
+    ]
+  }
+]

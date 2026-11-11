@@ -1,0 +1,9 @@
+/downloads/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment; filename="EduBattle.apk"
+  Cache-Control: public, max-age=31536000
+
+/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment; filename="EduBattle.apk"
+  Cache-Control: public, max-age=31536000

@@ -1,0 +1,40 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin-portal.html"
+  status = 200
+
+[[redirects]]
+  from = "/panel"
+  to = "/admin-portal.html"
+  status = 200
+
+[[redirects]]
+  from = "/apk"
+  to = "/downloads/EduBattle.apk"
+  status = 302
+
+[[redirects]]
+  from = "/app"
+  to = "/download.html"
+  status = 302
+
+[[redirects]]
+  from = "/download"
+  to = "/download.html"
+  status = 200
+
+[[headers]]
+  for = "/downloads/*.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"
+    Content-Disposition = "attachment; filename=\"EduBattle.apk\""
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://t.me telegram:;"
+    X-Content-Type-Options = "nosniff"
