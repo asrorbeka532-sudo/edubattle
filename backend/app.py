@@ -31,16 +31,84 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com"
+    render_url = render_url.rstrip("/")
+
+    # Register Webhooks on Render so Telegram automatically wakes up and delivers messages 24/7
     try:
-        from telegram_bot import start_telegram_bot_thread
-        start_telegram_bot_thread()
+        import requests
+        from telegram_bot import BOT_TOKEN as STUDENT_BOT_TOKEN
+        from admin_bot import ADMIN_BOT_TOKEN
+
+        wh_student = f"{render_url}/api/telegram-webhook"
+        r1 = requests.post(f"https://api.telegram.org/bot{STUDENT_BOT_TOKEN}/setWebhook", json={"url": wh_student}, timeout=15).json()
+        print(f"Student Bot Webhook ({wh_student}): {r1}")
+
+        wh_admin = f"{render_url}/api/admin-telegram-webhook"
+        r2 = requests.post(f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/setWebhook", json={"url": wh_admin}, timeout=15).json()
+        print(f"Admin Bot Webhook ({wh_admin}): {r2}")
     except Exception as e:
-        print(f"Failed to start telegram bot: {e}")
+        print(f"Failed to set webhook: {e}")
+        # Fallback to polling
+        try:
+            from telegram_bot import start_telegram_bot_thread
+            start_telegram_bot_thread()
+        except:
+            pass
+        try:
+            from admin_bot import start_admin_bot_thread
+            start_admin_bot_thread()
+        except:
+            pass
+
+# ----------------- TELEGRAM WEBHOOK ENDPOINTS (24/7 CLOUD DISPATCH) -----------------
+@app.post("/api/telegram-webhook")
+async def telegram_webhook(request: Request):
     try:
-        from admin_bot import start_admin_bot_thread
-        start_admin_bot_thread()
+        update = await request.json()
+        from telegram_bot import handle_message, handle_callback_query
+        if "message" in update:
+            handle_message(update["message"])
+        elif "callback_query" in update:
+            handle_callback_query(update["callback_query"])
+        return {"ok": True}
     except Exception as e:
-        print(f"Failed to start admin bot: {e}")
+        print(f"Telegram webhook error: {e}")
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/admin-telegram-webhook")
+async def admin_telegram_webhook(request: Request):
+    try:
+        update = await request.json()
+        from admin_bot import handle_message, handle_callback_query
+        if "message" in update:
+            handle_message(update["message"])
+        elif "callback_query" in update:
+            handle_callback_query(update["callback_query"])
+        return {"ok": True}
+    except Exception as e:
+        print(f"Admin webhook error: {e}")
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/setup-webhooks")
+def api_setup_webhooks():
+    import requests
+    render_url = (os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com").rstrip("/")
+    from telegram_bot import BOT_TOKEN as STUDENT_BOT_TOKEN
+    from admin_bot import ADMIN_BOT_TOKEN
+    
+    wh_student = f"{render_url}/api/telegram-webhook"
+    wh_admin = f"{render_url}/api/admin-telegram-webhook"
+    
+    r1 = requests.post(f"https://api.telegram.org/bot{STUDENT_BOT_TOKEN}/setWebhook", json={"url": wh_student}, timeout=15).json()
+    r2 = requests.post(f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/setWebhook", json={"url": wh_admin}, timeout=15).json()
+    
+    return {
+        "student_bot_webhook": r1,
+        "admin_bot_webhook": r2,
+        "student_url": wh_student,
+        "admin_url": wh_admin
+    }
 
 # ----------------- SECURITY & NO-CACHE HEADERS MIDDLEWARE -----------------
 @app.middleware("http")
