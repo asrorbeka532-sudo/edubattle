@@ -1363,12 +1363,13 @@ def launch_quiz_for_user(chat_id, user, quiz):
     q_count = len(questions)
     timer_sec = quiz.get("time_limit_sec", 30)
 
+    t_name = quiz.get("teacher_name") or "O'qituvchi"
     start_card = (
         f"🎯 <b>Testga Kirish Muvaffaqiyatli!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"📚 <b>Fan:</b> {quiz.get('subject_name', 'Fan')}\n"
         f"📝 <b>Mavzu:</b> {quiz.get('title', 'Test')}\n"
-        f"👨‍🏫 <b>Ustoz:</b> {quiz.get('teacher_name', 'O\'qituvchi')}\n"
+        f"👨‍🏫 <b>Ustoz:</b> {t_name}\n"
         f"❓ <b>Savollar soni:</b> {q_count} ta\n"
         f"⏱ <b>Vaqt:</b> Har bir savolga {timer_sec} soniya\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n\n"

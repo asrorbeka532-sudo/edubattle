@@ -342,6 +342,7 @@ def send_dashboard(chat_id: int):
         for u in recent_users:
             r_icon = "👨‍🏫" if u["role"] == "teacher" else "👨‍🎓"
             recent_str += f"\n• {r_icon} <b>{u['full_name']}</b> (<code>@{u['username']}</code>) — {u['school_lyceum'] or 'Maktab'} {u['grade'] or ''}"
+        recent_display = recent_str or "\nHali foydalanuvchilar yoq"
 
         text = (
             f"🛡️ <b>EduBattle Super Admin Jonli Tablosi</b>\n"
@@ -358,7 +359,7 @@ def send_dashboard(chat_id: int):
             f"📝 Topshirilgan testlar: <b>{sub_count} ta</b>\n"
             f"👥 Guruhlar/sinflar: <b>{grp_count} ta</b>\n"
             f"📚 Rasmiy darsliklar: <b>{book_count} ta</b> | Savollar: <b>{q_count} ta</b>\n\n"
-            f"🆕 <b>So'nggi a'zolar:</b>{recent_str or '\nHali foydalanuvchilar yoq'}\n\n"
+            f"🆕 <b>So'nggi a'zolar:</b>{recent_display}\n\n"
             f"⚙️ <b>Tezkor buyruqlar:</b>\n"
             f"• <code>/setprice 35000</code> — PRO narxini o'zgartirish\n"
             f"• <code>/pending</code> — Cheklarni ko'rish va tasdiqlash\n"
