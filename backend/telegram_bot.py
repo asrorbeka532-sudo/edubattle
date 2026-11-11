@@ -43,7 +43,7 @@ def get_live_tunnel_url():
                 return f"https://{m[-1]}.trycloudflare.com"
         except:
             pass
-    return "https://define-algorithm-choir-icon.trycloudflare.com"
+    return "https://edubattle-backend-x0v2.onrender.com"
 
 def get_student_app_url():
     t_url = get_live_tunnel_url()

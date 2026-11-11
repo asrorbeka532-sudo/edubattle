@@ -1,5 +1,5 @@
 // ================= GLOBAL BACKEND TUNNEL INTERCEPTOR =================
-const BACKEND_TUNNEL_URL = 'https://define-algorithm-choir-icon.trycloudflare.com';
+const BACKEND_TUNNEL_URL = 'https://edubattle-backend-x0v2.onrender.com';
 
 (function() {
   const origFetch = window.fetch;

@@ -1,5 +1,5 @@
-/api/*  https://define-algorithm-choir-icon.trycloudflare.com/api/:splat  200!
-/uploads/*  https://define-algorithm-choir-icon.trycloudflare.com/uploads/:splat  200
+/api/*  https://edubattle-backend-x0v2.onrender.com/api/:splat  200!
+/uploads/*  https://edubattle-backend-x0v2.onrender.com/uploads/:splat  200
 /apk  /downloads/EduBattle.apk  302
 /app  /  302
 /download  /download.html  200
