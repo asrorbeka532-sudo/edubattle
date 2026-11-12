@@ -653,17 +653,13 @@ def start_pro_purchase_flow(chat_id, user, deep_param="", user_lang="uz"):
         f"📚 Barcha sinflar darsliklari va manbalariga to'liq kirish\n"
         f"🏆 Respublika va maktablararo bellashuvlar\n"
         f"👑 Profil yonida oltin PRO nishoni\n\n"
-        f"To'lovni amalga oshirish uchun qulay usulni tanlang:"
+        f"To'lovni amalga oshirish uchun quyidagi tugmani bosing:"
     )
 
     markup = {
         "inline_keyboard": [
             [
-                {"text": "🔹 Click", "callback_data": f"pay_method_click_{target_user['id']}"},
-                {"text": "🔹 Payme", "callback_data": f"pay_method_payme_{target_user['id']}"}
-            ],
-            [
-                {"text": "💳 Karta raqam (Uzcard/Humo)", "callback_data": f"pay_method_card_{target_user['id']}"}
+                {"text": "💳 Karta orqali to'lov (Uzcard / Humo)", "callback_data": f"pay_method_card_{target_user['id']}"}
             ],
             [
                 {"text": "❌ Bekor qilish", "callback_data": "cancel_pro_pay"}
