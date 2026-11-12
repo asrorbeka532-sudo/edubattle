@@ -372,6 +372,19 @@ def init_db():
     except Exception as e:
         print(f"Huquq auto-seed check: {e}")
 
+    # Ensure questions have evenly distributed correct answer choices (A, B, C, D)
+    try:
+        cursor.execute("SELECT count(*) FROM questions WHERE correct_index = 0;")
+        zero_cnt = cursor.fetchone()[0]
+        cursor.execute("SELECT count(*) FROM questions;")
+        tot_cnt = cursor.fetchone()[0]
+        if tot_cnt > 0 and (zero_cnt / tot_cnt) > 0.4:
+            from shuffle_questions import shuffle_all_questions_in_db
+            conn.commit()
+            shuffle_all_questions_in_db()
+    except Exception as e:
+        print(f"Question shuffle check: {e}")
+
     conn.commit()
     conn.close()
 
