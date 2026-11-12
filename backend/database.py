@@ -385,6 +385,13 @@ def init_db():
     except Exception as e:
         print(f"Question shuffle check: {e}")
 
+    # Reset all coins, xp, and student grades as requested
+    try:
+        cursor.execute("UPDATE users SET coins = 0, xp = 0, grade_score = 0 WHERE coins != 0 OR xp != 0 OR grade_score != 0;")
+        cursor.execute("DELETE FROM student_grades;")
+    except Exception as e:
+        print(f"Reset migration notice: {e}")
+
     conn.commit()
     conn.close()
 

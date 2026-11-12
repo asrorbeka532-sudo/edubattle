@@ -58,7 +58,7 @@ async function loadAdminUsersList() {
               ${u.full_name} 
               <span class="badge badge-subtle" style="font-size:9px;">${u.role.toUpperCase()}</span>
             </div>
-            <div style="font-size:10px; color:var(--text-muted);">${u.school_lyceum || 'Maktab'} • ${u.grade || ''} • ${u.xp} XP</div>
+            <div style="font-size:10px; color:var(--text-muted);">${u.school_lyceum || 'Maktab'} • ${u.grade || ''} • ${(u.coins || 0).toLocaleString()} 🪙</div>
           </div>
         </div>
         <div>

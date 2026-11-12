@@ -332,7 +332,7 @@ function showGameOver(msg) {
 
   const isMeWinner = (winner && state.currentUser && winner.id === state.currentUser.id);
   document.getElementById('winnerTitle').textContent = isMeWinner ? '🎉 Siz G\'olibsiz!' : `🏆 G'olib: ${winner ? winner.name : 'Durang'}`;
-  document.getElementById('winnerSubtitle').textContent = isMeWinner ? 'Qoyilmaqom bellashuv! +100 XP hisobingizga qo\'shildi.' : 'Yaxshi bellashuv bo\'ldi.';
+  document.getElementById('winnerSubtitle').textContent = isMeWinner ? 'Qoyilmaqom bellashuv! +50 🪙 Tanga hisobingizga qo\'shildi.' : 'Yaxshi bellashuv bo\'ldi.';
 
   const listEl = document.getElementById('finalStandingsList');
   listEl.innerHTML = standings.map((p, idx) => `

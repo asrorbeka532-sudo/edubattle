@@ -440,7 +440,7 @@ async function initApp() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlRole = urlParams.get('role') || 'student';
         const tgUser = tg.initDataUnsafe?.user;
-        if (tgUser && !localStorage.getItem('edubattle_token') && !localStorage.getItem('edubattle_user')) {
+        if (tgUser) {
           let loggedIn = false;
           try {
             const tgLoginRes = await fetch('/api/auth/telegram-webapp-login', {
@@ -467,7 +467,7 @@ async function initApp() {
           } catch (authErr) {
             console.warn("Telegram webapp auth backend offline:", authErr);
           }
-          if (!loggedIn) {
+          if (!loggedIn && !localStorage.getItem('edubattle_user')) {
             const tgFullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || tgUser.username || "Telegram Foydalanuvchi";
             const generatedEB = "EB-" + Math.floor(10000 + Math.random() * 90000);
             const localUser = {
@@ -477,11 +477,11 @@ async function initApp() {
               role: urlRole,
               school_lyceum: 'EduBattle Online Maktab',
               grade: urlRole === 'teacher' ? 'Oliy toifa' : '9-sinf',
-              xp: 250,
-              coins: 100,
-              streak: 3,
+              xp: 0,
+              coins: 0,
+              streak: 1,
               is_pro: urlRole === 'teacher' ? 1 : 0,
-              grade_score: 5
+              grade_score: 0
             };
             state.currentUser = localUser;
             localStorage.setItem('edubattle_user', JSON.stringify(localUser));
@@ -550,16 +550,16 @@ async function initApp() {
       if (window.Telegram && window.Telegram.WebApp) {
         const localUser = {
           id: Math.floor(Math.random() * 899999) + 100000,
-          username: "edubattle_player",
+          username: "EB-" + Math.floor(10000 + Math.random() * 90000),
           full_name: "EduBattle O'quvchi",
           role: 'student',
           school_lyceum: 'EduBattle Online Maktab',
           grade: '9-sinf',
-          xp: 250,
-          coins: 100,
-          streak: 3,
+          xp: 0,
+          coins: 0,
+          streak: 1,
           is_pro: 0,
-          grade_score: 5
+          grade_score: 0
         };
         state.currentUser = localUser;
         localStorage.setItem('edubattle_user', JSON.stringify(localUser));
@@ -1048,8 +1048,6 @@ function updateHeaderAndProfileUI() {
   document.getElementById('homeGreetingName').textContent = `${greetingWord}, ${u.full_name.split(' ')[0]}`;
   document.getElementById('homeGreetingMeta').textContent = `${u.school_lyceum || 'Maktab/Litsey'} • ${u.grade || ''}`;
   document.getElementById('homeUserTag').textContent = roleText;
-  const homeXpEl = document.getElementById('homeXpText');
-  if (homeXpEl) homeXpEl.textContent = (u.xp || 0).toLocaleString();
   const homeCoinsEl = document.getElementById('homeCoinsText');
   if (homeCoinsEl) homeCoinsEl.textContent = (u.coins || 0).toLocaleString();
 
@@ -1094,22 +1092,12 @@ function updateHeaderAndProfileUI() {
   if (isTeacher || isAdmin) {
     if (studentStatsRow) studentStatsRow.style.display = 'none';
     if (teacherStatsRow) teacherStatsRow.style.display = 'flex';
-    if (studentDiaryBox) studentDiaryBox.style.display = 'none';
   } else {
     if (studentStatsRow) studentStatsRow.style.display = 'flex';
     if (teacherStatsRow) teacherStatsRow.style.display = 'none';
-    if (studentDiaryBox) studentDiaryBox.style.display = 'block';
-
-    const xpEl = document.getElementById('profileXp');
-    if (xpEl) xpEl.textContent = `${u.xp} XP`;
-
-    const gradeScoreEl = document.getElementById('profileGradeScore');
-    if (gradeScoreEl) {
-      gradeScoreEl.textContent = `${(u.grade_score !== undefined && u.grade_score !== null) ? u.grade_score : 0} / 100 ⭐`;
-    }
 
     const streakEl = document.getElementById('profileStreak');
-    if (streakEl) streakEl.textContent = `${u.streak} kun`;
+    if (streakEl) streakEl.textContent = `${u.streak || 1} kun`;
 
     const profileCoinsEl = document.getElementById('profileCoins');
     if (profileCoinsEl) profileCoinsEl.textContent = `${(u.coins || 0).toLocaleString()} 🪙`;
@@ -1893,7 +1881,7 @@ async function advanceSoloTest() {
 
       if (data.new_coins !== undefined && state.currentUser) {
         state.currentUser.coins = data.new_coins;
-        state.currentUser.xp = data.new_xp;
+        state.currentUser.xp = 0;
         localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser));
         updateHeaderAndProfileUI();
         updateHomeDailyLimitBadge();
@@ -1907,9 +1895,8 @@ async function advanceSoloTest() {
           <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">Natija: ${session.correctCount} / ${session.questions.length} to'g'ri</p>
 
           <div class="minimal-card highlight-green" style="margin:14px 0;">
-            <div style="font-size:16px; font-weight:900; color:var(--accent-green);">+${data.xp_earned} XP &nbsp;•&nbsp; <span style="color:#f59e0b;">+${data.coins_earned || 0} 🪙 Tanga</span></div>
+            <div style="font-size:16px; font-weight:900; color:#f59e0b;">+${data.coins_earned || 0} 🪙 Tanga yutib oldingiz!</div>
             <div style="font-size:12px; color:var(--text-primary); margin-top:4px;">Jami Tangalaringiz: <b style="color:#f59e0b;">${((data.new_coins !== undefined) ? data.new_coins : (state.currentUser?.coins || 0)).toLocaleString()} 🪙</b></div>
-            <div style="font-size:12px; color:var(--text-primary); margin-top:4px;">O'rtacha Bahoingiz: <b style="color:var(--accent-red);">${data.grade_score || 0} / 100 ball</b> ⭐</div>
           </div>
 
           <button class="btn btn-red" onclick="closeModal('soloTestModal'); refreshCurrentUserData();">Bosh Sahifaga Qaytish</button>
@@ -2152,8 +2139,8 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
       }
       if (userRankMeta) {
         userRankMeta.textContent = period === 'weekly'
-          ? `Haftalik: #${userRank ? userRank.rank : '-'} o'rin | Umumiy: ${state.currentUser.coins || 0} 🪙`
-          : `Umumiy: #${userRank ? userRank.rank : '-'} o'rin | XP: ${state.currentUser.xp || 0}`;
+          ? `Haftalik: #${userRank ? userRank.rank : '-'} o'rin | Jami: ${(state.currentUser.coins || 0).toLocaleString()} 🪙`
+          : `Umumiy: #${userRank ? userRank.rank : '-'} o'rin | Tangalar: ${(state.currentUser.coins || 0).toLocaleString()} 🪙`;
       }
       if (userRankCoins) {
         const uCoins = userRank ? (period === 'weekly' ? userRank.weekly_coins : userRank.total_coins) : (state.currentUser.coins || 0);
@@ -2202,7 +2189,6 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
               <span>🪙</span>
               <span>${(coinsVal || 0).toLocaleString()}</span>
             </div>
-            <span style="font-size:9px; color:var(--text-muted);">${(s.xp || 0).toLocaleString()} XP</span>
           </div>
         </div>
       `;
@@ -2484,7 +2470,7 @@ async function loadMyFriendsList() {
                     </div>
                     <div>
                       <div style="font-size:12px; font-weight:700; color:var(--text-primary);">${escapeHtml(r.full_name)}</div>
-                      <div style="font-size:10px; color:var(--text-muted);">@${escapeHtml(r.username)} • ${escapeHtml(r.grade || '')} • ${r.xp || 0} XP</div>
+                      <div style="font-size:10px; color:var(--text-muted);">@${escapeHtml(r.username)} • ${escapeHtml(r.grade || '')} • ${(r.coins || 0).toLocaleString()} 🪙</div>
                     </div>
                   </div>
                   <div style="display:flex; gap:6px;">
@@ -2548,7 +2534,7 @@ async function loadMyFriendsList() {
                   ${escapeHtml(f.full_name)} ${f.is_pro ? '<span class="tag tag-red" style="font-size:8px; padding:1px 5px;">PRO</span>' : ''}
                 </div>
                 <div style="font-size:10px; color:var(--text-muted);">
-                  @${escapeHtml(f.username)} • ${escapeHtml(f.school_lyceum || 'Maktab')} • <span style="color:var(--accent-green); font-weight:700;">${f.xp} XP</span>
+                  @${escapeHtml(f.username)} • ${escapeHtml(f.school_lyceum || 'Maktab')} • <span style="color:#f59e0b; font-weight:700;">${(f.coins || 0).toLocaleString()} 🪙</span>
                 </div>
               </div>
             </div>
@@ -3490,12 +3476,13 @@ async function submitBlitzChoice(selectedIndex) {
         if (buttons[result.correct_index]) buttons[result.correct_index].classList.add('correct');
       }
 
-      // Update user state coins and XP
+      // Update user state coins
       if (state.currentUser) {
         state.currentUser.coins = result.new_coins;
-        state.currentUser.xp = result.new_xp;
+        state.currentUser.xp = 0;
         localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser));
         updateHomeDailyLimitBadge();
+        updateHeaderAndProfileUI();
       }
 
       // Show explanation
@@ -3604,12 +3591,10 @@ function showCoinRewardPopup(coins) {
 async function updateHomeDailyLimitBadge() {
   const user = state.currentUser;
   const coinsEl = document.getElementById('homeCoinsText');
-  const xpEl = document.getElementById('homeXpText');
   const limitEl = document.getElementById('homeDailyLimitText');
 
   if (user) {
-    if (coinsEl) coinsEl.textContent = user.coins || 0;
-    if (xpEl) xpEl.textContent = user.xp || 0;
+    if (coinsEl) coinsEl.textContent = (user.coins || 0).toLocaleString();
 
     const isTeacher = user.role === 'teacher' || user.role === 'admin';
     const isPro = user.is_pro === 1 || user.is_pro === true;

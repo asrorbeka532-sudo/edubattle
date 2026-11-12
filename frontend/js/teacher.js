@@ -379,14 +379,11 @@ function renderTeacherStudentsList(students) {
 
           <div style="display:flex; align-items:center; gap:8px;">
             <div style="text-align:right;">
-              <div class="score-badge-100 ${getScoreBadgeClass(s.grade_score)}">${(s.grade_score !== undefined && s.grade_score !== null) ? s.grade_score : 0} ball</div>
+              <div style="font-size:12px; font-weight:800; color:#f59e0b;">${(s.coins || 0).toLocaleString()} 🪙</div>
               <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">
                 ${s.tests_completed || 0} ta test
               </div>
             </div>
-            <button class="btn btn-outline btn-sm" onclick="openStudentGradesHistoryModal(${s.id}, '${escapeHtml(s.full_name)}')" style="padding:4px 10px; font-size:11px;" title="Test natijalari asosidagi baholar jurnali">
-              📊 Test Baholari
-            </button>
           </div>
         </div>
       `).join('')}
@@ -1008,12 +1005,8 @@ async function loadGroupStudentsList(groupId, inviteCode) {
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
               <div style="text-align:right;">
-                <div class="score-badge-100 ${getScoreBadgeClass(s.grade_score)}">${(s.grade_score !== undefined && s.grade_score !== null) ? s.grade_score + ' ball' : '0 ball'}</div>
-                <div style="font-size:9px; color:var(--text-muted);">${s.xp} XP</div>
+                <div style="font-size:12px; font-weight:800; color:#f59e0b;">${(s.coins || 0).toLocaleString()} 🪙</div>
               </div>
-              <button class="btn btn-outline btn-sm" onclick="openStudentGradesHistoryModal(${s.id}, '${escapeHtml(s.full_name)}')" style="padding:3px 8px; font-size:10px;" title="Test baholari kundaligi">
-                📊 Test Baholari
-              </button>
               <button class="btn btn-outline btn-sm" onclick="removeStudentFromGroup(${groupId}, ${s.id}, '${escapeHtml(s.full_name)}')" style="color:var(--accent-red); border-color:rgba(225,29,72,0.3); padding:3px 6px; font-size:10px;" title="Guruhdan chiqarish">
                 ✕
               </button>
@@ -1179,59 +1172,6 @@ function openGradeStudentModal(studentId, studentName) {
 }
 
 async function openStudentGradesHistoryModal(studentId, studentName) {
-  playSound('click');
-  const modal = document.getElementById('studentGradesModal');
-  const listContainer = document.getElementById('diaryGradesListContainer');
-
-  document.getElementById('diaryStudentName').textContent = `📊 ${studentName} — Baholar Jurnali`;
-  listContainer.innerHTML = '<div style="text-align:center; padding:18px; color:var(--text-muted); font-size:11px;">Baholar yuklanmoqda...</div>';
-  modal.classList.add('active');
-
-  try {
-    const res = await fetch(`/api/student/${studentId}/grades`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      listContainer.innerHTML = `<div style="color:var(--accent-red); padding:10px;">${data.detail || 'Yuklashda xatolik'}</div>`;
-      return;
-    }
-
-    // Set overall stats
-    document.getElementById('diaryOverallScore').textContent = `${data.overall_average} / 100`;
-    document.getElementById('diaryOverallLetter').textContent = `${data.overall_letter.grade} (${data.overall_letter.label}) ${data.overall_letter.stars}`;
-    document.getElementById('diaryTotalGradesLabel').textContent = `${data.total_grades} ta baho kiritilgan`;
-
-    document.getElementById('diaryCountAlo').textContent = data.breakdown.alo;
-    document.getElementById('diaryCountYaxshi').textContent = data.breakdown.yaxshi;
-    document.getElementById('diaryCountQoniqarli').textContent = data.breakdown.qoniqarli;
-    document.getElementById('diaryCountQoniqarsiz').textContent = data.breakdown.qoniqarsiz;
-
-    if (!data.grades || data.grades.length === 0) {
-      listContainer.innerHTML = `
-        <div class="minimal-card" style="text-align:center; padding:20px; font-size:11px; color:var(--text-muted);">
-          Ushbu o'quvchiga hozircha baholar kiritilmagan.
-        </div>
-      `;
-      return;
-    }
-
-    listContainer.innerHTML = data.grades.map(g => `
-      <div class="grade-history-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
-          <div>
-            <span style="font-size:11px; font-weight:800; color:#fff;">${escapeHtml(g.grade_type)}</span>
-            <span style="font-size:10px; color:var(--text-muted); margin-left:4px;">• ${escapeHtml(g.subject_name || 'Fan')}</span>
-          </div>
-          <span class="score-badge-100 ${getScoreBadgeClass(g.score)}">${g.score} ball (${g.letter.grade})</span>
-        </div>
-        ${g.comment ? `<div style="font-size:11px; color:var(--text-secondary); margin:4px 0;">"${escapeHtml(g.comment)}"</div>` : ''}
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:var(--text-muted); margin-top:4px;">
-          <span>Ustoz: <b style="color:var(--text-secondary);">${escapeHtml(g.teacher_name || 'Tizim testi')}</b></span>
-          <span>${g.created_at ? g.created_at.split('T')[0] || g.created_at.substring(0, 10) : ''}</span>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    listContainer.innerHTML = '<div style="color:var(--accent-red); padding:10px;">Baholar tarixini yuklashda xatolik!</div>';
-  }
+  // Baholash tizimi o'chirilgan
+  return;
 }

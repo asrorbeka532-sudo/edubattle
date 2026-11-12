@@ -192,19 +192,15 @@
               <span class="tag tag-red" id="homeUserTag">O'quvchi</span>
             </div>
 
-            <!-- XP & Coins & Daily Limit Status -->
-            <div style="margin-top:12px; display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; background:rgba(0,0,0,0.25); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
-              <div>
-                <div style="font-size:10px; color:var(--text-muted);">⚡ Tajriba</div>
-                <div style="font-size:12px; font-weight:800; color:#fff;"><span id="homeXpText">0</span> XP</div>
-              </div>
+            <!-- Coins & Daily Limit Status -->
+            <div style="margin-top:12px; display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; background:rgba(0,0,0,0.25); padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
               <div onclick="showLeaderboardModal('weekly')" style="cursor:pointer;" title="Haftalik va umumiy tangalar reytingi">
-                <div style="font-size:10px; color:var(--text-muted);">🪙 Tangalar 🏆</div>
-                <div style="font-size:12px; font-weight:800; color:#f59e0b;"><span id="homeCoinsText">0</span> 🪙</div>
+                <div style="font-size:11px; color:var(--text-muted);">🪙 Tangalar 🏆</div>
+                <div style="font-size:14px; font-weight:800; color:#f59e0b;"><span id="homeCoinsText">0</span> 🪙</div>
               </div>
               <div onclick="checkDailyTestLimit()" style="cursor:pointer;" title="Kunlik bepul test limiti">
-                <div style="font-size:10px; color:var(--text-muted);">🎯 Kunlik test</div>
-                <div style="font-size:12px; font-weight:800; color:#10b981;" id="homeDailyLimitText">2/2 bepul</div>
+                <div style="font-size:11px; color:var(--text-muted);">🎯 Kunlik test</div>
+                <div style="font-size:14px; font-weight:800; color:#10b981;" id="homeDailyLimitText">2/2 bepul</div>
               </div>
             </div>
           </div>
@@ -680,7 +676,7 @@
             <span class="tag tag-green" id="teacherStudentsCountBadge">0 nafar</span>
           </div>
           <p class="section-subtext">
-            Barcha sinflaringizdagi o'quvchilar reytingi, o'rtacha bahosi (100 ballik shkala) va bajargan testlari monitoringi.
+            Barcha sinflaringizdagi o'quvchilar reytingi, to'plangan tangalari va bajargan testlari monitoringi.
           </p>
 
           <div class="minimal-card" style="margin-bottom:12px;">
@@ -749,23 +745,15 @@
               </div>
             </div>
 
-            <!-- Student Stats (XP, Tangalar, 100 ballik o'rtacha baho, Streak) -->
-            <div id="studentProfileStatsRow" style="display:flex; justify-content:center; gap:16px; margin-top:14px;">
+            <!-- Student Stats (Tangalar, Streak) -->
+            <div id="studentProfileStatsRow" style="display:flex; justify-content:center; gap:28px; margin-top:14px;">
               <div>
-                <div style="font-size:14px; font-weight:800; color:var(--accent-red);" id="profileXp">0 XP</div>
-                <div style="font-size:10px; color:var(--text-muted);">Tajriba</div>
+                <div style="font-size:16px; font-weight:800; color:#f59e0b;" id="profileCoins">0 🪙</div>
+                <div style="font-size:11px; color:var(--text-muted);">Tangalar</div>
               </div>
               <div>
-                <div style="font-size:14px; font-weight:800; color:#f59e0b;" id="profileCoins">0 🪙</div>
-                <div style="font-size:10px; color:var(--text-muted);">Tangalar</div>
-              </div>
-              <div id="profileGradeScoreBox">
-                <div style="font-size:14px; font-weight:800; color:var(--accent-green);" id="profileGradeScore">100 / 100 ⭐</div>
-                <div style="font-size:10px; color:var(--text-muted);">O'rtacha baho</div>
-              </div>
-              <div>
-                <div style="font-size:14px; font-weight:800; color:var(--text-primary);" id="profileStreak">1 kun</div>
-                <div style="font-size:10px; color:var(--text-muted);">Ketma-ketlik</div>
+                <div style="font-size:16px; font-weight:800; color:var(--text-primary);" id="profileStreak">1 kun</div>
+                <div style="font-size:11px; color:var(--text-muted);">Ketma-ketlik</div>
               </div>
             </div>
 
@@ -783,13 +771,6 @@
                 <div style="font-size:14px; font-weight:800; color:var(--text-primary);" id="profileTeacherStatus">Faol</div>
                 <div style="font-size:10px; color:var(--text-muted);">Status</div>
               </div>
-            </div>
-
-            <!-- Student Diary Button (Only for students) -->
-            <div id="profileStudentDiaryBox" style="margin-top:14px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
-              <button class="btn btn-outline btn-sm" onclick="openMyGradesModal()" style="width:100%; font-size:11px; padding:6px 12px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                <span>📊</span> <span>O'quvchi Baholar Jurnali & Kundalik</span> <span style="color:var(--accent-red); margin-left:auto;">➔</span>
-              </button>
             </div>
           </div>
 
@@ -2063,62 +2044,12 @@
     </div>
   </div>
 
-  <!-- Modal 15: Student Grades Diary & Journal (Avtomatik Baholar Kundaligi) -->
-  <div class="modal-backdrop" id="studentGradesModal">
-    <div class="modal-window" style="max-height:88vh; display:flex; flex-direction:column;">
-      <button class="modal-close-btn" onclick="closeModal('studentGradesModal')">✕</button>
-
-      <div style="margin-bottom:12px;">
-        <h3 id="diaryStudentName" style="font-size:16px; font-weight:800; color:var(--text-primary);">📊 Baholar Kundaligi</h3>
-        <p style="font-size:11px; color:var(--text-muted);" id="diaryStudentMeta">O'quvchi ishlagan testlari natijalariga qarab tizim tomonidan avtomatik baholangan 100 ballik shkala</p>
-      </div>
-
-      <!-- Big Overall Card -->
-      <div class="minimal-card highlight-green" style="text-align:center; padding:14px; margin-bottom:12px;">
-        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Umumiy O'rtacha Baho</div>
-        <div style="font-size:28px; font-weight:900; color:var(--text-primary); margin:2px 0;" id="diaryOverallScore">88 / 100</div>
-        <div style="font-size:14px; font-weight:800; color:var(--accent-green);" id="diaryOverallLetter">
-          5 (A'lo) ⭐⭐⭐⭐⭐
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:12px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
-          <div>
-            <div style="font-size:13px; font-weight:800; color:#10b981;" id="diaryCountAlo">0</div>
-            <div style="font-size:9px; color:var(--text-muted);">A'lo (5)</div>
-          </div>
-          <div>
-            <div style="font-size:13px; font-weight:800; color:#3b82f6;" id="diaryCountYaxshi">0</div>
-            <div style="font-size:9px; color:var(--text-muted);">Yaxshi (4)</div>
-          </div>
-          <div>
-            <div style="font-size:13px; font-weight:800; color:#f59e0b;" id="diaryCountQoniqarli">0</div>
-            <div style="font-size:9px; color:var(--text-muted);">Qoniqarli (3)</div>
-          </div>
-          <div>
-            <div style="font-size:13px; font-weight:800; color:#e11d48;" id="diaryCountQoniqarsiz">0</div>
-            <div style="font-size:9px; color:var(--text-muted);">Qoniqarsiz (2)</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grades History List Scrollable -->
-      <div class="section-label" style="font-size:12px; margin-bottom:8px;">
-        <span>📋 Baholar Tarixi</span>
-        <span style="font-size:10px; color:var(--text-muted);" id="diaryTotalGradesLabel">0 ta baho</span>
-      </div>
-
-      <div id="diaryGradesListContainer" style="flex:1; overflow-y:auto; max-height:300px; display:flex; flex-direction:column; gap:8px; padding-right:2px;">
-        <div style="text-align:center; padding:16px; color:var(--text-muted); font-size:11px;">Baholar yuklanmoqda...</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Scripts with cache buster -->
-  <script src="/js/i18n.js?v=20261111_1148"></script>
-  <script src="/js/app.js?v=20261111_1148"></script>
-  <script src="/js/battle.js?v=20261111_1148"></script>
-  <script src="/js/teacher.js?v=20261111_1148"></script>
-  <script src="/js/admin.js?v=20261111_1148"></script>
+  <script src="/js/i18n.js?v=20261112_0945"></script>
+  <script src="/js/app.js?v=20261112_0945"></script>
+  <script src="/js/battle.js?v=20261112_0945"></script>
+  <script src="/js/teacher.js?v=20261112_0945"></script>
+  <script src="/js/admin.js?v=20261112_0945"></script>
 
   <!-- Clean Service Worker & Caches -->
   <script>

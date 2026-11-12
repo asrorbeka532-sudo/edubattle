@@ -110,7 +110,7 @@ const I18N_DICTIONARY = {
     teacher_quizzes_title: "Yaratilgan Testlar",
     btn_create_quiz: "+ Test Tuzish",
     btn_upload_book: "+ Darslik Yuklash",
-    group_students_title: "O'quvchilar va Baholash Jurnali",
+    group_students_title: "O'quvchilar Ro'yxati",
     theme_title: "Tizim Ko'rinishi (Mavzu)",
     theme_dark: "Qorong'u rejim (Dark Mode)",
     theme_light: "Yoruq rejim (Light Mode)"

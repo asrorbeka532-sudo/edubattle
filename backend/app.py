@@ -679,7 +679,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, ?, 'EduBattle Online', '9-sinf', 'avatar1.png', 100, 50, 1, ?, ?, datetime('now'), 5, ?, ?)
+        VALUES (?, ?, ?, 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, requested_role, 1 if requested_role == 'teacher' else 0, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -699,7 +699,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, 'student', 'EduBattle Online', '9-sinf', 'avatar1.png', 100, 50, 1, 0, ?, datetime('now'), 5, ?, ?)
+        VALUES (?, ?, 'student', 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -1051,7 +1051,7 @@ def get_leaderboard(period: str = "weekly", user_id: Optional[int] = None):
             LEFT JOIN coin_transactions ct ON ct.user_id = u.id AND ct.created_at >= datetime('now', '-7 days')
             WHERE u.role = 'student'
             GROUP BY u.id
-            ORDER BY weekly_coins DESC, total_coins DESC, u.xp DESC
+            ORDER BY weekly_coins DESC, total_coins DESC
             LIMIT 50
         """)
     else:  # all_time
@@ -1062,7 +1062,7 @@ def get_leaderboard(period: str = "weekly", user_id: Optional[int] = None):
                    u.grade_score, u.streak, u.is_pro
             FROM users u
             WHERE u.role = 'student'
-            ORDER BY u.coins DESC, u.xp DESC
+            ORDER BY u.coins DESC
             LIMIT 50
         """)
 
@@ -1177,9 +1177,9 @@ def submit_test(payload: dict = Body(...)):
 
     cursor.execute("""
         UPDATE users 
-        SET xp = xp + ?, coins = coins + ?, grade_score = ? 
+        SET coins = coins + ? 
         WHERE id = ?
-    """, (xp_earned, coins_earned, avg_grade, user_id))
+    """, (coins_earned, user_id))
 
     if coins_earned > 0:
         cursor.execute("""
@@ -1188,21 +1188,20 @@ def submit_test(payload: dict = Body(...)):
         """, (user_id, coins_earned))
 
     conn.commit()
-    cursor.execute("SELECT coins, xp FROM users WHERE id = ?", (user_id,))
+    cursor.execute("SELECT coins FROM users WHERE id = ?", (user_id,))
     u_updated = cursor.fetchone()
     new_coins = u_updated["coins"] if u_updated else 0
-    new_xp = u_updated["xp"] if u_updated else 0
     conn.close()
     bump_data_revision()
 
     return {
         "success": True,
-        "xp_earned": xp_earned,
+        "xp_earned": 0,
         "coins_earned": coins_earned,
         "new_coins": new_coins,
-        "new_xp": new_xp,
+        "new_xp": 0,
         "score": score_pct,
-        "grade_score": avg_grade,
+        "grade_score": 0,
         "is_pro": is_pro,
         "today_count": today_count + 1,
         "remaining_free": max(0, 2 - (today_count + 1)) if not is_pro else 999
@@ -1919,8 +1918,8 @@ def submit_quiz_result(payload: dict = Body(...)):
         avg_row = cursor.fetchone()
         new_avg = round(avg_row[0]) if (avg_row and avg_row[0] is not None) else score_pct
 
-        xp_bonus = correct_count * 20 + (50 if correct_count == total_questions else 0)
-        cursor.execute("UPDATE users SET grade_score = ?, xp = xp + ? WHERE id = ?", (new_avg, xp_bonus, student_id))
+        xp_bonus = 0
+        cursor.execute("UPDATE users SET grade_score = 0 WHERE id = ?", (student_id,))
     else:
         new_avg = score_pct
 
@@ -3093,16 +3092,21 @@ def submit_blitz_answer(payload: dict = Body(...)):
     conn = get_db()
     c = conn.cursor()
     
+    # Get user by id or telegram_id
+    c.execute("SELECT id, is_pro, coins FROM users WHERE id = ? OR telegram_id = ?", (user_id, user_id))
+    u = c.fetchone()
+    if not u:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+        
+    actual_user_id = u["id"]
+    is_pro = bool(u["is_pro"])
+
     # Check duplicate
-    c.execute("SELECT id FROM blitz_submissions WHERE user_id = ? AND subject_id = ? AND minute_epoch = ?", (user_id, subject_id, minute_epoch))
+    c.execute("SELECT id FROM blitz_submissions WHERE user_id = ? AND subject_id = ? AND minute_epoch = ?", (actual_user_id, subject_id, minute_epoch))
     if c.fetchone():
         conn.close()
         return {"success": False, "message": "Ushbu daqiqadagi savolga allaqachon javob berdingiz!"}
-        
-    # Get user
-    c.execute("SELECT id, is_pro, xp, coins FROM users WHERE id = ?", (user_id,))
-    u = c.fetchone()
-    is_pro = bool(u["is_pro"]) if u else False
     
     # Get question for this minute
     c.execute("SELECT * FROM questions WHERE subject_id = ? ORDER BY id ASC", (subject_id,))
@@ -3116,28 +3120,28 @@ def submit_blitz_answer(payload: dict = Body(...)):
     
     is_correct = (selected_index == q["correct_index"])
     coins_earned = (25 if is_pro else 10) if is_correct else 0
-    xp_earned = (50 if is_pro else 25) if is_correct else 5
+    xp_earned = 0
     
     c.execute("""
         INSERT INTO blitz_submissions (user_id, subject_id, minute_epoch, selected_index, is_correct, coins_earned)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (user_id, subject_id, minute_epoch, selected_index, 1 if is_correct else 0, coins_earned))
+    """, (actual_user_id, subject_id, minute_epoch, selected_index, 1 if is_correct else 0, coins_earned))
     
     c.execute("""
         UPDATE users 
-        SET coins = coins + ?, xp = xp + ? 
+        SET coins = coins + ? 
         WHERE id = ?
-    """, (coins_earned, xp_earned, user_id))
+    """, (coins_earned, actual_user_id))
 
     if coins_earned > 0:
         c.execute("""
             INSERT INTO coin_transactions (user_id, amount, reason, created_at)
             VALUES (?, ?, '1 daqiqalik Blitz turniri', datetime('now'))
-        """, (user_id, coins_earned))
+        """, (actual_user_id, coins_earned))
     
     conn.commit()
     
-    c.execute("SELECT coins, xp FROM users WHERE id = ?", (user_id,))
+    c.execute("SELECT coins FROM users WHERE id = ?", (actual_user_id,))
     new_stats = dict(c.fetchone())
     conn.close()
     
@@ -3146,11 +3150,11 @@ def submit_blitz_answer(payload: dict = Body(...)):
         "is_correct": is_correct,
         "correct_index": q["correct_index"],
         "coins_earned": coins_earned,
-        "xp_earned": xp_earned,
+        "xp_earned": 0,
         "is_pro": is_pro,
         "explanation": q.get("explanation") or "To'g'ri javob qayd etildi.",
         "new_coins": new_stats["coins"],
-        "new_xp": new_stats["xp"]
+        "new_xp": 0
     }
 
 
