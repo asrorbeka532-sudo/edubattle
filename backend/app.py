@@ -34,6 +34,26 @@ def on_startup():
     render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com"
     render_url = render_url.rstrip("/")
 
+    # Keep-alive daemon: prevents Render free instance from spinning down
+    try:
+        def keep_alive_daemon():
+            import time
+            import requests
+            time.sleep(30)
+            target = render_url or "https://edubattle-backend-x0v2.onrender.com"
+            while True:
+                try:
+                    res = requests.get(f"{target}/api/subjects", timeout=20)
+                    print(f"[KeepAlive] Self-ping status: {res.status_code}")
+                except Exception as err:
+                    print(f"[KeepAlive] Self-ping error: {err}")
+                time.sleep(300) # every 5 minutes (Render idle limit is 15 minutes)
+
+        import threading
+        threading.Thread(target=keep_alive_daemon, daemon=True, name="RenderKeepAlive").start()
+    except Exception as e:
+        print(f"Failed to start keep_alive_daemon: {e}")
+
     # Register Webhooks on Render so Telegram automatically wakes up and delivers messages 24/7
     try:
         import requests
