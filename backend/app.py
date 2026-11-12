@@ -74,6 +74,28 @@ def on_startup():
             except Exception as se:
                 print(f"Error seeding new textbooks: {se}")
 
+        # Seed/ensure 2020-2023 new curriculum questions bank
+        c.execute("SELECT COUNT(*) FROM questions")
+        q_count = c.fetchone()[0]
+        bundled_q_path = os.path.join(os.path.dirname(__file__), "bundled_questions.json")
+        if q_count < 600 and os.path.exists(bundled_q_path):
+            try:
+                with open(bundled_q_path, "r", encoding="utf-8") as qf:
+                    seed_questions = json.load(qf)
+                c.execute("DELETE FROM questions")
+                for sq in seed_questions:
+                    c.execute("""
+                        INSERT INTO questions (subject_id, grade, chapter_title, question_text, options, correct_index, explanation, difficulty)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        sq["subject_id"], sq["grade"], sq["chapter_title"], sq["question_text"],
+                        json.dumps(sq["options"], ensure_ascii=False) if isinstance(sq["options"], list) else sq["options"],
+                        sq["correct_index"], sq["explanation"], sq.get("difficulty", "orta")
+                    ))
+                print(f"Successfully seeded {len(seed_questions)} curriculum questions on startup.")
+            except Exception as qe:
+                print(f"Error seeding new questions: {qe}")
+
         conn.commit()
         conn.close()
     except Exception as e:
