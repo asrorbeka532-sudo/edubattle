@@ -186,15 +186,16 @@ def delete_user_permanently(user_id: int) -> tuple[bool, str]:
         return False, "Administratorni o'chirib bo'lmaydi!"
     
     # Cascade delete all related records
-    c.execute("DELETE FROM quiz_submissions WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM quiz_submissions WHERE student_id = ?", (user_id,))
     c.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
     c.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
-    c.execute("DELETE FROM battle_history WHERE user1_id = ? OR user2_id = ?", (user_id, user_id))
+    c.execute("DELETE FROM battle_history WHERE winner_id = ?", (user_id,))
     c.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
-    c.execute("DELETE FROM group_members WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM group_members WHERE student_id = ?", (user_id,))
     c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
     c.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
     c.execute("DELETE FROM student_grades WHERE student_id = ?", (user_id,))
+    c.execute("DELETE FROM user_sessions WHERE user_id = ?", (user_id,))
     c.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
@@ -322,17 +323,21 @@ def deauthenticate_admin(chat_id: int):
     conn.close()
     user_states.pop(chat_id, None)
 
+OWNER_ADMIN_CHAT_ID = 2017540097  # @Asoee1 shaxsiy Telegram ID si
+
 def get_all_authenticated_admin_chat_ids() -> List[int]:
+    admin_ids = {OWNER_ADMIN_CHAT_ID}
     try:
         conn = get_db()
         c = conn.cursor()
         c.execute("SELECT chat_id FROM admin_bot_sessions WHERE is_authenticated = 1")
         rows = c.fetchall()
         conn.close()
-        return [r["chat_id"] for r in rows]
+        for r in rows:
+            admin_ids.add(r["chat_id"])
     except Exception as e:
         logger.error(f"Error fetching admin ids: {e}")
-        return []
+    return list(admin_ids)
 
 # ----------------- KEYBOARDS -----------------
 

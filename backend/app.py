@@ -2392,6 +2392,80 @@ def toggle_user_pro(payload: dict = Body(...)):
     bump_data_revision()
     return {"success": True, "is_pro": new_status}
 
+@app.get("/api/admin/pending-receipts")
+def admin_get_pending_receipts(secret: Optional[str] = Query(None)):
+    if secret not in ("asoee321", "admin2026"):
+        raise HTTPException(status_code=403, detail="Faqat Super Admin uchun!")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT s.*, u.username, u.full_name, u.role, u.school_lyceum, u.grade, u.telegram_id, u.telegram_username
+        FROM subscriptions s
+        JOIN users u ON s.user_id = u.id
+        WHERE s.status = 'pending'
+        ORDER BY s.id DESC
+    """)
+    rows = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return {"success": True, "receipts": rows}
+
+@app.post("/api/admin/approve-receipt/{receipt_id}")
+def admin_approve_receipt(receipt_id: int, payload: dict = Body(...)):
+    secret = payload.get("secret")
+    if secret not in ("asoee321", "admin2026"):
+        raise HTTPException(status_code=403, detail="Faqat Super Admin uchun!")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT s.*, u.username, u.full_name, u.telegram_id FROM subscriptions s JOIN users u ON s.user_id = u.id WHERE s.id = ?", (receipt_id,))
+    sub = cursor.fetchone()
+    if not sub:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Chek topilmadi")
+    cursor.execute("UPDATE subscriptions SET status = 'approved', reviewed_at = datetime('now') WHERE id = ?", (receipt_id,))
+    cursor.execute("UPDATE users SET is_pro = 1, pro_expires_at = datetime('now', '+30 days') WHERE id = ?", (sub["user_id"],))
+    conn.commit()
+    conn.close()
+    bump_data_revision()
+    
+    if sub["telegram_id"]:
+        try:
+            import requests
+            bot_token = os.environ.get("TELEGRAM_BOT_TOKEN") or "9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g"
+            msg = "🎉 Ajoyib yangilik! Siz yuborgan to'lov cheki tasdiqlandi. EduBattle 1 oylik PRO obunangiz faollashtirildi! 💎"
+            requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": sub["telegram_id"], "text": msg}, timeout=5)
+        except Exception:
+            pass
+            
+    return {"success": True, "message": f"Chek #{receipt_id} tasdiqlandi va PRO obuna berildi!"}
+
+@app.post("/api/admin/reject-receipt/{receipt_id}")
+def admin_reject_receipt(receipt_id: int, payload: dict = Body(...)):
+    secret = payload.get("secret")
+    if secret not in ("asoee321", "admin2026"):
+        raise HTTPException(status_code=403, detail="Faqat Super Admin uchun!")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT s.*, u.telegram_id FROM subscriptions s JOIN users u ON s.user_id = u.id WHERE s.id = ?", (receipt_id,))
+    sub = cursor.fetchone()
+    if not sub:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Chek topilmadi")
+    cursor.execute("UPDATE subscriptions SET status = 'rejected', reviewed_at = datetime('now') WHERE id = ?", (receipt_id,))
+    conn.commit()
+    conn.close()
+    bump_data_revision()
+    
+    if sub["telegram_id"]:
+        try:
+            import requests
+            bot_token = os.environ.get("TELEGRAM_BOT_TOKEN") or "9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g"
+            msg = "⚠️ Siz yuborgan to'lov cheki admin tomonidan rad etildi."
+            requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": sub["telegram_id"], "text": msg}, timeout=5)
+        except Exception:
+            pass
+
+    return {"success": True, "message": f"Chek #{receipt_id} rad etildi."}
+
 @app.delete("/api/admin/users/{user_id}")
 def admin_delete_user(user_id: int, secret: Optional[str] = Query(None)):
     if secret and secret not in ("asoee321", "admin2026"):
@@ -2409,12 +2483,12 @@ def admin_delete_user(user_id: int, secret: Optional[str] = Query(None)):
         raise HTTPException(status_code=400, detail="Administratorni o'chirib bo'lmaydi!")
 
     # Cascade delete all related records
-    cursor.execute("DELETE FROM quiz_submissions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM quiz_submissions WHERE student_id = ?", (user_id,))
     cursor.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
     cursor.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM battle_history WHERE user1_id = ? OR user2_id = ?", (user_id, user_id))
+    cursor.execute("DELETE FROM battle_history WHERE winner_id = ?", (user_id,))
     cursor.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
-    cursor.execute("DELETE FROM group_members WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM group_members WHERE student_id = ?", (user_id,))
     cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
     cursor.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
     cursor.execute("DELETE FROM student_grades WHERE student_id = ?", (user_id,))

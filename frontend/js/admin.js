@@ -100,7 +100,7 @@ async function adminDeleteUser(userId, userName) {
   }
   playSound('click');
   try {
-    const res = await fetch(`/api/admin/users/${userId}`, {
+    const res = await fetch(`/api/admin/users/${userId}?secret=asoee321`, {
       method: 'DELETE'
     });
     const data = await res.json();

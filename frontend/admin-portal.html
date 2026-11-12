@@ -389,6 +389,19 @@
       </div>
     </div>
 
+    <!-- Pending Receipts Management -->
+    <div class="minimal-card" id="pendingReceiptsSection" style="margin-bottom: 16px; border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.02);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
+          <span>🧾</span> Kutilayotgan To'lov Cheklari (<span id="countPendingReceipts">0</span> ta)
+        </h3>
+        <button class="btn btn-sm btn-outline" onclick="loadPendingReceipts()" style="border-color: rgba(245,158,11,0.5); color: #f59e0b; font-weight: 700;">🔄 Yangilash</button>
+      </div>
+      <div id="pendingReceiptsList">
+        <div style="color: var(--text-muted); font-size: 12px; padding: 10px 0;">Yuklanmoqda...</div>
+      </div>
+    </div>
+
     <!-- Users Management: Students & Teachers Separated -->
     <div class="minimal-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
@@ -607,6 +620,7 @@
       // Load questions & users
       loadAdminQuestions();
       loadUsers(isSilent);
+      loadPendingReceipts();
     }
 
     function applyAdminStats(stats) {
@@ -728,6 +742,107 @@
             </div>
           </div>
         `).join('');
+      }
+    }
+
+    async function loadPendingReceipts() {
+      const listEl = document.getElementById('pendingReceiptsList');
+      const countEl = document.getElementById('countPendingReceipts');
+      if (!listEl) return;
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/pending-receipts?secret=${encodeURIComponent(secret)}`);
+        const data = await res.json();
+        const receipts = (data && data.receipts) || [];
+        if (countEl) countEl.textContent = receipts.length;
+
+        if (receipts.length === 0) {
+          listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; text-align: center;">✅ Hozirda kutilayotgan to\'lov cheklari mavjud emas. Barcha cheklar ko\'rib chiqilgan!</div>';
+          return;
+        }
+
+        listEl.innerHTML = receipts.map(r => {
+          const photoUrl = r.receipt_file_id && r.receipt_file_id.startsWith('/uploads/') ? r.receipt_file_id : null;
+          return `
+            <div style="padding: 12px; margin-bottom: 10px; border-radius: 10px; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-weight: 800; font-size: 13px; color: #fff;">
+                    ${escapeHtml(r.full_name)} <span style="color: var(--text-muted); font-size: 11px;">(@${escapeHtml(r.username)})</span>
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                    💳 ${escapeHtml(r.provider.toUpperCase())} • 💰 <b style="color:#f59e0b;">${(r.amount || 0).toLocaleString()} so'm</b> • 📅 ${escapeHtml(r.created_at || '')}
+                  </div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                    🏫 ${escapeHtml(r.school_lyceum || '')} • ${escapeHtml(r.grade || '')} • Telegram: @${escapeHtml(r.telegram_username || 'yo\'q')}
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-sm btn-green" onclick="approveReceipt(${r.id})" style="font-weight: 700; font-size: 11px;">
+                    ✅ Tasdiqlash
+                  </button>
+                  <button class="btn btn-sm btn-red btn-outline" onclick="rejectReceipt(${r.id})" style="font-weight: 700; font-size: 11px;">
+                    ❌ Rad etish
+                  </button>
+                </div>
+              </div>
+              ${photoUrl ? `
+                <div style="margin-top: 6px;">
+                  <a href="${photoUrl}" target="_blank" style="display: inline-block;">
+                    <img src="${photoUrl}" alt="Chek" style="max-height: 180px; max-width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain;">
+                  </a>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">🔍 Rasmni to'liq ko'rish uchun ustiga bosing</div>
+                </div>
+              ` : '<div style="font-size: 11px; color: #ef4444;">⚠️ Chek fotosurati yuklanmagan</div>'}
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        listEl.innerHTML = '<div style="color: #ef4444; font-size: 12px;">Cheklarni yuklashda server xatosi!</div>';
+      }
+    }
+
+    async function approveReceipt(receiptId) {
+      if (!confirm(`Chek #${receiptId} ni tasdiqlab, o'quvchiga 1 oylik PRO obuna bermoqchimisiz?`)) return;
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/approve-receipt/${receiptId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert(`✅ ${data.message}`);
+          loadPendingReceipts();
+          loadUsers();
+          initAdminData(false);
+        } else {
+          alert(data.detail || "Tasdiqlashda xatolik!");
+        }
+      } catch (e) {
+        alert("Server bilan aloqa uzildi!");
+      }
+    }
+
+    async function rejectReceipt(receiptId) {
+      if (!confirm(`Chek #${receiptId} ni rad etmoqchimisiz?`)) return;
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/reject-receipt/${receiptId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert(`❌ ${data.message}`);
+          loadPendingReceipts();
+        } else {
+          alert(data.detail || "Rad etishda xatolik!");
+        }
+      } catch (e) {
+        alert("Server bilan aloqa uzildi!");
       }
     }
 
