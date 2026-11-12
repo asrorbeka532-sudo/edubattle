@@ -2369,6 +2369,39 @@ def toggle_user_pro(payload: dict = Body(...)):
     bump_data_revision()
     return {"success": True, "is_pro": new_status}
 
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: int, secret: Optional[str] = Query(None)):
+    if secret and secret not in ("asoee321", "admin2026"):
+        raise HTTPException(status_code=403, detail="Faqat Super Admin uchun!")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, full_name, role FROM users WHERE id = ?", (user_id,))
+    u = cursor.fetchone()
+    if not u:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    if u["role"] == "admin":
+        conn.close()
+        raise HTTPException(status_code=400, detail="Administratorni o'chirib bo'lmaydi!")
+
+    # Cascade delete all related records
+    cursor.execute("DELETE FROM quiz_submissions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM battle_history WHERE user1_id = ? OR user2_id = ?", (user_id, user_id))
+    cursor.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
+    cursor.execute("DELETE FROM group_members WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
+    cursor.execute("DELETE FROM student_grades WHERE student_id = ?", (user_id,))
+    cursor.execute("DELETE FROM user_sessions WHERE user_id = ?", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    bump_data_revision()
+    return {"success": True, "message": f"'{u['full_name']}' (@{u['username']}) muvaffaqiyatli o'chirildi!"}
+
 @app.post("/api/admin/upload-pdf")
 async def admin_upload_pdf(file: UploadFile = File(...), folder: str = Form("textbooks")):
     ext = os.path.splitext(file.filename)[1].lower()

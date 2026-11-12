@@ -26,6 +26,7 @@ import sqlite3
 import threading
 import urllib.request
 import urllib.error
+import requests
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
@@ -33,9 +34,11 @@ from typing import Dict, Any, List, Optional
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] (AdminBot) %(message)s")
 logger = logging.getLogger("AdminBot")
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 DB_PATH = os.path.join(os.path.dirname(__file__), "edubattle.db")
 ADMIN_BOT_TOKEN = os.environ.get("ADMIN_BOT_TOKEN", "8898266998:AAE09rQN6Uf7vhvHI7MPUIiIU1evtbjpt_U")
-USER_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "7963231456:AAE-Y1hJ3r-vO4Q2qUa0mR9y8_o7mB_1234") # Fallback to user bot for forwarding
+USER_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g")
 ADMIN_SECRET_PASSWORDS = ["asoee321", "admin2026"]
 
 def get_live_tunnel_url():
@@ -91,23 +94,111 @@ def get_db():
     return conn
 
 
-def download_telegram_file(file_id: str, dest_path: str) -> bool:
+def download_file_with_token(file_id: str, dest_path: str, bot_token: str) -> bool:
     try:
-        res = api_call("getFile", {"file_id": file_id})
-        if res and res.get("ok"):
-            remote_path = res["result"].get("file_path")
-            if remote_path:
-                download_url = f"https://api.telegram.org/file/bot{ADMIN_BOT_TOKEN}/{remote_path}"
-                req = urllib.request.Request(download_url)
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    data = resp.read()
+        url = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data.get("ok"):
+                fpath = data["result"].get("file_path")
+                if fpath:
+                    dl_url = f"https://api.telegram.org/file/bot{bot_token}/{fpath}"
                     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-                    with open(dest_path, "wb") as f:
-                        f.write(data)
+                    req_dl = urllib.request.Request(dl_url)
+                    with urllib.request.urlopen(req_dl, timeout=45) as resp_dl:
+                        with open(dest_path, "wb") as f_out:
+                            f_out.write(resp_dl.read())
                     return True
     except Exception as e:
-        logger.error(f"Error downloading telegram file: {e}")
+        logger.warning(f"download_file_with_token error ({bot_token[:10]}...): {e}")
     return False
+
+def download_telegram_file(file_id: str, dest_path: str) -> bool:
+    # First try using Student Bot token (where student receipts are uploaded)
+    if download_file_with_token(file_id, dest_path, USER_BOT_TOKEN):
+        return True
+    # Fallback to Admin Bot token
+    return download_file_with_token(file_id, dest_path, ADMIN_BOT_TOKEN)
+
+def resolve_receipt_file(file_ref: str, file_type: str = "photo") -> Optional[str]:
+    if not file_ref:
+        return None
+    # 1. Check if it's already an existing local absolute file
+    if os.path.isabs(file_ref) and os.path.exists(file_ref):
+        return file_ref
+    # 2. Check if it's a relative /uploads/... path
+    if file_ref.startswith("/uploads/"):
+        for root in [FRONTEND_DIR, os.path.join(BASE_DIR, "frontend"), os.path.join(os.path.dirname(__file__), "..", "frontend")]:
+            cand = os.path.normpath(os.path.join(root, file_ref.lstrip("/")))
+            if os.path.exists(cand):
+                return cand
+    # 3. If file_ref is a Telegram file_id, check cache or download via student bot
+    ext = ".jpg" if file_type == "photo" else ".pdf"
+    safe_hash = abs(hash(file_ref))
+    cached_dest = os.path.join(FRONTEND_DIR, "uploads", "receipts", f"tg_{safe_hash}{ext}")
+    if os.path.exists(cached_dest) and os.path.getsize(cached_dest) > 0:
+        return cached_dest
+    if download_file_with_token(file_ref, cached_dest, USER_BOT_TOKEN):
+        return cached_dest
+    if download_file_with_token(file_ref, cached_dest, ADMIN_BOT_TOKEN):
+        return cached_dest
+    return None
+
+def send_receipt_to_admin(chat_id: int, file_ref: str, file_type: str, caption: str, reply_markup: dict):
+    filepath = resolve_receipt_file(file_ref, file_type)
+    sent = False
+    if filepath and os.path.exists(filepath):
+        try:
+            method = "sendPhoto" if file_type == "photo" else "sendDocument"
+            field = "photo" if file_type == "photo" else "document"
+            url = f"https://api.telegram.org/bot{ADMIN_BOT_TOKEN}/{method}"
+            data = {"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"}
+            if reply_markup:
+                data["reply_markup"] = json.dumps(reply_markup)
+            with open(filepath, "rb") as f:
+                res = requests.post(url, data=data, files={field: f}, timeout=35)
+                res_json = res.json()
+                if res.status_code == 200 and res_json.get("ok"):
+                    sent = True
+                else:
+                    logger.warning(f"Telegram {method} returned: {res_json}")
+        except Exception as e:
+            logger.error(f"Error posting receipt file to telegram: {e}")
+
+    # Fallback: if sending photo failed or file not found, ALWAYS send text and buttons!
+    if not sent:
+        web_link = ""
+        if file_ref and file_ref.startswith("/uploads/"):
+            web_link = f"\n\n🔗 <b>Chekni ko'rish (Web):</b> https://edubattle-backend-x0v2.onrender.com{file_ref}"
+        send_message(chat_id, caption + web_link, reply_markup=reply_markup)
+
+def delete_user_permanently(user_id: int) -> tuple[bool, str]:
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id, username, full_name, role FROM users WHERE id = ?", (user_id,))
+    u = c.fetchone()
+    if not u:
+        conn.close()
+        return False, "Foydalanuvchi topilmadi"
+    if u["role"] == "admin":
+        conn.close()
+        return False, "Administratorni o'chirib bo'lmaydi!"
+    
+    # Cascade delete all related records
+    c.execute("DELETE FROM quiz_submissions WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM battle_history WHERE user1_id = ? OR user2_id = ?", (user_id, user_id))
+    c.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
+    c.execute("DELETE FROM group_members WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+    c.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
+    c.execute("DELETE FROM student_grades WHERE student_id = ?", (user_id,))
+    c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return True, f"'{u['full_name']}' (@{u['username']}) platformadan butunlay o'chirildi."
 def init_admin_bot_db():
     conn = get_db()
     c = conn.cursor()
@@ -438,10 +529,7 @@ def show_pending_receipts(chat_id: int):
         file_type = r["receipt_type"]
 
         if file_id:
-            if file_type == "photo":
-                send_photo(chat_id, file_id, caption=caption, reply_markup=markup)
-            else:
-                send_document(chat_id, file_id, caption=caption, reply_markup=markup)
+            send_receipt_to_admin(chat_id, file_id, file_type, caption, markup)
         else:
             send_message(chat_id, caption, reply_markup=markup)
 
@@ -651,13 +739,17 @@ def find_user(chat_id: int, query: str):
             f"━━━━━━━━━━━━━━━━━━━━━━"
         )
         markup = None
-        if u["role"] != "teacher":
+        if u["role"] not in ("teacher", "admin"):
             action_btn = (
                 {"text": "❌ PRO ni Bekor Qilish", "callback_data": f"adm_revokepro_{u['id']}"}
                 if u["is_pro"] else
                 {"text": "➕ PRO Berish (30 kun)", "callback_data": f"adm_grantpro_{u['id']}"}
             )
-            markup = {"inline_keyboard": [[action_btn]]}
+            del_btn = {"text": "🗑️ O'quvchini O'chirish", "callback_data": f"adm_prompt_del_{u['id']}"}
+            markup = {"inline_keyboard": [[action_btn], [del_btn]]}
+        elif u["role"] == "teacher":
+            del_btn = {"text": "🗑️ Ustozni O'chirish", "callback_data": f"adm_prompt_del_{u['id']}"}
+            markup = {"inline_keyboard": [[del_btn]]}
         send_message(chat_id, txt, reply_markup=markup)
 
 # ----------------- BROADCAST MESSAGE -----------------
@@ -1121,6 +1213,45 @@ def handle_message(msg: dict):
             send_message(chat_id, "PRO beriladigan foydalanuvchi loginini (masalan: <code>EB-84841</code>) kiriting:", reply_markup=CANCEL_KEYBOARD)
         return
 
+    if text.startswith("/delstudent") or text.startswith("/deluser") or text.startswith("/delete"):
+        parts = text.split(maxsplit=1)
+        if len(parts) > 1:
+            target = parts[1].strip()
+            conn = get_db()
+            c = conn.cursor()
+            if target.isdigit():
+                c.execute("SELECT * FROM users WHERE id = ?", (int(target),))
+            else:
+                c.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (target.lstrip("@"),))
+            u = c.fetchone()
+            conn.close()
+            if not u:
+                send_message(chat_id, f"⚠️ '{target}' bo'yicha hech qanday foydalanuvchi topilmadi.")
+                return
+            if u["role"] == "admin":
+                send_message(chat_id, "⚠️ Administratorni o'chirib bo'lmaydi!")
+                return
+            confirm_markup = {
+                "inline_keyboard": [
+                    [
+                        {"text": "🗑️ Ha, butunlay o'chirilsin", "callback_data": f"adm_confirm_del_{u['id']}"},
+                        {"text": "❌ Bekor qilish", "callback_data": "adm_cancel_del"}
+                    ]
+                ]
+            }
+            send_message(
+                chat_id,
+                f"⚠️ <b>DIQQAT! FOYDALANUVCHINI O'CHIRISH:</b>\n\n"
+                f"👤 <b>Foydalanuvchi:</b> {u['full_name']}\n"
+                f"🆔 <b>Login:</b> <code>@{u['username']}</code> (ID: {u['id']})\n"
+                f"🏫 <b>Ta'lim maskani:</b> {u['school_lyceum'] or '-'} • {u['grade'] or '-'}\n\n"
+                f"Haqiqatan ham bu foydalanuvchini va uning barcha natijalarini tizimdan <b>butunlay o'chirmoqchimisiz?</b>",
+                reply_markup=confirm_markup
+            )
+        else:
+            send_message(chat_id, "ℹ️ Foydalanish: <code>/delstudent &lt;ID yoki @login&gt;</code>\nMasalan: <code>/delstudent 16</code> yoki <code>/delstudent @EB-12345</code>", reply_markup=MAIN_ADMIN_KEYBOARD)
+        return
+
     if text.startswith("/setdownloadurl"):
         parts = text.split(maxsplit=1)
         if len(parts) > 1:
@@ -1292,6 +1423,55 @@ def handle_callback_query(cq: dict):
         answer_callback_query(cq_id, "PRO bekor qilindi.")
         return
 
+    if data.startswith("adm_prompt_del_"):
+        target_id = int(data.split("_")[-1])
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT id, username, full_name, role FROM users WHERE id = ?", (target_id,))
+        u = c.fetchone()
+        conn.close()
+        if not u:
+            answer_callback_query(cq_id, "Foydalanuvchi topilmadi!", show_alert=True)
+            return
+        if u["role"] == "admin":
+            answer_callback_query(cq_id, "Administratorni o'chirib bo'lmaydi!", show_alert=True)
+            return
+        answer_callback_query(cq_id)
+        confirm_markup = {
+            "inline_keyboard": [
+                [
+                    {"text": "🗑️ Ha, butunlay o'chirilsin", "callback_data": f"adm_confirm_del_{target_id}"},
+                    {"text": "❌ Bekor qilish", "callback_data": "adm_cancel_del"}
+                ]
+            ]
+        }
+        send_message(
+            chat_id,
+            f"⚠️ <b>DIQQAT! FOYDALANUVCHINI O'CHIRISH:</b>\n\n"
+            f"👤 <b>Foydalanuvchi:</b> {u['full_name']}\n"
+            f"🆔 <b>Login:</b> <code>@{u['username']}</code> (ID: {u['id']})\n\n"
+            f"Haqiqatan ham bu foydalanuvchini va uning barcha natijalarini tizimdan <b>butunlay o'chirmoqchimisiz?</b>\n"
+            f"<i>Bu amalni qaytarib bo'lmaydi!</i>",
+            reply_markup=confirm_markup
+        )
+        return
+
+    if data.startswith("adm_confirm_del_"):
+        target_id = int(data.split("_")[-1])
+        ok, msg = delete_user_permanently(target_id)
+        if ok:
+            answer_callback_query(cq_id, "✅ Muvaffaqiyatli o'chirildi!", show_alert=True)
+            send_message(chat_id, f"✅ {msg}")
+        else:
+            answer_callback_query(cq_id, f"Xatolik: {msg}", show_alert=True)
+            send_message(chat_id, f"⚠️ {msg}")
+        return
+
+    if data == "adm_cancel_del":
+        answer_callback_query(cq_id, "O'chirish bekor qilindi.")
+        send_message(chat_id, "Amal bekor qilindi.")
+        return
+
     answer_callback_query(cq_id)
 
 # ----------------- EXTERNAL NOTIFICATION TRIGGER -----------------
@@ -1329,13 +1509,12 @@ def notify_admins_of_new_receipt(receipt_data: dict):
     file_id = receipt_data.get("file_id")
     file_type = receipt_data.get("file_type", "photo")
 
+    target_file = receipt_data.get("local_path") or receipt_data.get("file_id") or receipt_data.get("raw_telegram_file_id")
+
     for a_id in admin_ids:
         try:
-            if file_id:
-                if file_type == "photo":
-                    send_photo(a_id, file_id, caption=caption, reply_markup=markup)
-                else:
-                    send_document(a_id, file_id, caption=caption, reply_markup=markup)
+            if target_file:
+                send_receipt_to_admin(a_id, target_file, file_type, caption, markup)
             else:
                 send_message(a_id, caption, reply_markup=markup)
         except Exception as e:

@@ -61,9 +61,12 @@ async function loadAdminUsersList() {
             <div style="font-size:10px; color:var(--text-muted);">${u.school_lyceum || 'Maktab'} • ${u.grade || ''} • ${(u.coins || 0).toLocaleString()} 🪙</div>
           </div>
         </div>
-        <div>
+        <div style="display:flex; align-items:center; gap:6px;">
           <button class="btn btn-sm ${u.is_pro ? 'btn-purple' : 'btn-outline'}" onclick="adminToggleUserPro(${u.id}, this)">
             ${u.is_pro ? '💎 PRO (29 000)' : '➕ PRO Berish'}
+          </button>
+          <button class="btn btn-sm btn-outline" onclick="adminDeleteUser(${u.id}, '${escapeHtml(u.full_name)}')" style="border-color:#ef4444; color:#ef4444; font-weight:700;">
+            🗑️ O'chirish
           </button>
         </div>
       </div>
@@ -88,6 +91,28 @@ async function adminToggleUserPro(userId, btn) {
     }
   } catch (e) {
     console.error(e);
+  }
+}
+
+async function adminDeleteUser(userId, userName) {
+  if (!confirm(`⚠️ DIQQAT!\n\n"${userName}" (ID: ${userId}) ni platformadan butunlay o'chirmoqchimisiz?`)) {
+    return;
+  }
+  playSound('click');
+  try {
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      playSound('victory');
+      alert(`✅ ${data.message || 'Muvaffaqiyatli o\'chirildi!'}`);
+      loadAdminDashboard();
+    } else {
+      alert(data.detail || data.message || "O'chirishda xatolik yuz berdi!");
+    }
+  } catch (e) {
+    alert("Serverga ulanishda xatolik!");
   }
 }
 

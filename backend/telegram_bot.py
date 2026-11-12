@@ -725,6 +725,26 @@ def show_payment_details(chat_id, user_id, method, message_id=None):
 
     send_message(chat_id, pay_text, reply_markup=cancel_btn)
 
+def download_receipt_file(file_id: str, dest_path: str) -> bool:
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/getFile?file_id={file_id}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data.get("ok"):
+                fpath = data["result"].get("file_path")
+                if fpath:
+                    dl_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{fpath}"
+                    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                    req_dl = urllib.request.Request(dl_url)
+                    with urllib.request.urlopen(req_dl, timeout=60) as resp_dl:
+                        with open(dest_path, "wb") as f_out:
+                            f_out.write(resp_dl.read())
+                    return True
+    except Exception as e:
+        logging.warning(f"Failed to download receipt file {file_id}: {e}")
+    return False
+
 def handle_payment_receipt(message, file_id, file_type, user):
     chat_id = message.get("chat", {}).get("id")
     from_user = message.get("from", {})
@@ -749,11 +769,26 @@ def handle_payment_receipt(message, file_id, file_type, user):
         send_message(chat_id, "⚠️ Chek qabul qilinishi uchun avval menyudagi <b>'💎 PRO Obuna sotib olish'</b> tugmasini bosing va hisobingizni tanlang.")
         return
 
+    # Determine extension and local storage path
+    ext = ".jpg" if file_type == "photo" else ".pdf"
+    if file_type == "document":
+        doc_name = (message.get("document") or {}).get("file_name", "")
+        if "." in doc_name:
+            ext = "." + doc_name.rsplit(".", 1)[-1].lower()
+
+    timestamp = int(time.time())
+    rel_path = f"/uploads/receipts/receipt_{timestamp}_{user_id}{ext}"
+    frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+    abs_path = os.path.join(frontend_dir, "uploads", "receipts", f"receipt_{timestamp}_{user_id}{ext}")
+
+    download_success = download_receipt_file(file_id, abs_path)
+    stored_file_id = rel_path if download_success else file_id
+
     # Insert pending subscription into DB
     c.execute("""
         INSERT INTO subscriptions (user_id, plan_name, amount, provider, status, receipt_file_id, receipt_type, telegram_chat_id, created_at)
         VALUES (?, 'student_pro', ?, ?, 'pending', ?, ?, ?, datetime('now'))
-    """, (user_id, amount, provider, file_id, file_type, chat_id))
+    """, (user_id, amount, provider, stored_file_id, file_type, chat_id))
     sub_id = c.lastrowid
     conn.commit()
     conn.close()
@@ -781,7 +816,9 @@ def handle_payment_receipt(message, file_id, file_type, user):
             "username": username,
             "provider": provider,
             "amount": amount,
-            "file_id": file_id,
+            "file_id": stored_file_id,
+            "local_path": abs_path if download_success else None,
+            "raw_telegram_file_id": file_id,
             "file_type": file_type
         })
     except Exception as e:

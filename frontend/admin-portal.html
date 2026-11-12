@@ -695,10 +695,13 @@
                 🏫 ${escapeHtml(u.school_lyceum || 'Maktab')} • Fan / Mutaxassislik: <b>${escapeHtml(u.grade || 'Fan o\'qituvchisi')}</b> • Login: <code>@${escapeHtml(u.username)}</code>
               </div>
             </div>
-            <div>
+            <div style="display:flex; align-items:center; gap:6px;">
               <span class="tag tag-subtle" style="font-size:11px; font-weight:700; color:var(--accent-green); border-color:rgba(5,150,105,0.25);">
                 Cheklovsiz Ustoz Kabineti
               </span>
+              <button class="btn btn-sm btn-outline" onclick="deleteUser(${u.id}, '${escapeHtml(u.full_name)}')" style="border-color:#ef4444; color:#ef4444; font-weight:700;">
+                🗑️ O'chirish
+              </button>
             </div>
           </div>
         `).join('');
@@ -715,13 +718,37 @@
                 🏫 ${escapeHtml(u.school_lyceum || 'Maktab')} • Sinf: <b>${escapeHtml(u.grade || '-')}</b> • Baho: <b>${u.grade_score || 0}/100</b> • Login: <code>@${escapeHtml(u.username)}</code>
               </div>
             </div>
-            <div>
+            <div style="display:flex; align-items:center; gap:6px;">
               <button class="btn btn-sm ${u.is_pro ? 'btn-subtle' : 'btn-red'}" onclick="togglePro(${u.id})" style="${u.is_pro ? 'border:1px solid var(--border-red); color:var(--accent-red); font-weight:800;' : 'font-weight:800;'}">
                 ${u.is_pro ? 'PRO Bekor Qilish' : '➕ PRO Berish (1 oy)'}
+              </button>
+              <button class="btn btn-sm btn-outline" onclick="deleteUser(${u.id}, '${escapeHtml(u.full_name)}')" style="border-color:#ef4444; color:#ef4444; font-weight:700;">
+                🗑️ O'chirish
               </button>
             </div>
           </div>
         `).join('');
+      }
+    }
+
+    async function deleteUser(userId, userName) {
+      if (!confirm(`⚠️ DIQQAT!\n\n"${userName}" foydalanuvchisini va uning barcha natijalarini butunlay o'chirmoqchimisiz?\n\nBu amalni orqaga qaytarib bo'lmaydi!`)) {
+        return;
+      }
+      const secret = getAdminSecret();
+      try {
+        const res = await fetch(`/api/admin/users/${userId}?secret=${encodeURIComponent(secret)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert(`✅ ${data.message || 'Foydalanuvchi muvaffaqiyatli o\'chirildi!'}`);
+          loadUsers();
+        } else {
+          alert(data.detail || data.message || "O'chirishda xatolik yuz berdi!");
+        }
+      } catch (e) {
+        alert("Serverga ulanishda xatolik!");
       }
     }
 

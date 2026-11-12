@@ -901,7 +901,7 @@ async function submitLogin() {
       alert(data.detail || "Login yoki parol noto'g'ri!");
     }
   } catch (e) {
-    alert("Serverga ulanishda xatolik!");
+    alert("Serverga ulanishda xatolik yuz berdi!\n\nServer hozir uyg'onayotgan yoki internet aloqasi uzilgan bo'lishi mumkin. Iltimos, 10-15 soniyadan so'ng qayta urinib ko'ring.");
   }
 }
 
@@ -964,7 +964,7 @@ async function submitRegister() {
       alert(data.detail || "Ro'yxatdan o'tishda xatolik yuz berdi!");
     }
   } catch (e) {
-    alert("Serverga ulanishda xatolik!");
+    alert("Serverga ulanishda xatolik yuz berdi!\n\nServer hozir uyg'onayotgan yoki internet aloqasi uzilgan bo'lishi mumkin. Iltimos, 10-15 soniyadan so'ng qayta urinib ko'ring.");
   }
 }
 
