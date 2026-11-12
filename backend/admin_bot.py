@@ -768,7 +768,7 @@ def find_user(chat_id: int, query: str):
             f"📝 <b>Ism-familiya:</b> {u['full_name']}\n"
             f"🎭 <b>Roli:</b> {role_label}\n"
             f"🏫 <b>Ta'lim maskani:</b> {u['school_lyceum'] or 'Mavjud emas'}\n"
-            f"🎓 <b>Sinf / Mutaxassislik:</b> {u['grade'] or 'Mavjud emas'}\n"
+            f"🎓 <b>Toifa:</b> {u['grade'] or 'Umumiy'}\n"
             f"⭐ <b>Ball (XP):</b> {u['xp']} | <b>Tangalar:</b> {u['coins']}\n"
             f"📱 <b>Telegram ID:</b> <code>{u['telegram_id'] or 'Ulanmagan'}</code>\n"
             f"📅 <b>Ro'yxatdan o'tgan:</b> {u['created_at'][:16] if u['created_at'] else '-'}\n"

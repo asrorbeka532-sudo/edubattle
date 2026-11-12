@@ -910,7 +910,7 @@ async function submitRegister() {
   const username = (document.getElementById('regUsername').value || '').trim();
   const password = (document.getElementById('regPassword').value || '').trim();
   const school = (document.getElementById('regSchool').value || '').trim();
-  const grade = document.getElementById('regGrade').value;
+  const grade = 'Umumiy';
   const verificationCode = (document.getElementById('regOtpCode')?.value || '').trim();
   const telegram = (document.getElementById('regTelegramUser')?.value || '').trim();
   const honeypot = (document.getElementById('regWebsiteUrl')?.value || '').trim();
@@ -933,9 +933,9 @@ async function submitRegister() {
         full_name: fullName,
         username: username,
         password: password,
-        role: selectedRegRole,
+        role: 'student',
         school_lyceum: school || 'Maktab / Litsey',
-        grade: selectedRegRole === 'student' ? grade : 'Oliy toifa',
+        grade: 'Umumiy',
         verification_code: verificationCode,
         telegram: telegram,
         website_url: honeypot

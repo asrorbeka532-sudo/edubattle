@@ -32,7 +32,7 @@ app.add_middleware(
 def on_startup():
     init_db()
 
-    # Sanitize user avatars in database
+    # Sanitize user avatars and enforce universal grade in database
     try:
         conn = get_db()
         c = conn.cursor()
@@ -48,10 +48,11 @@ def on_startup():
                OR avatar LIKE '%.jpg' 
                OR avatar LIKE 'avatar%'
         """)
+        c.execute("UPDATE users SET grade = 'Umumiy' WHERE role = 'student' OR grade != 'Umumiy'")
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Failed to sanitize avatars: {e}")
+        print(f"Failed to sanitize avatars / grade: {e}")
 
     render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com"
     render_url = render_url.rstrip("/")
@@ -520,7 +521,7 @@ def register_user(payload: dict = Body(...), request: Request = None):
     role = "student" # Teacher registration is disabled until further notice
     password = (payload.get("password") or "").strip()
     school_lyceum = (payload.get("school_lyceum") or "Maktab / Litsey").strip()
-    grade = (payload.get("grade") or "9-sinf").strip()
+    grade = "Umumiy"
     verification_code = (payload.get("verification_code") or "").strip()
     telegram_raw = (payload.get("telegram") or "").strip().lstrip("@")
 
@@ -698,7 +699,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, ?, 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
+        VALUES (?, ?, ?, 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, requested_role, 1 if requested_role == 'teacher' else 0, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -718,7 +719,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, 'student', 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
+        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -1552,7 +1553,7 @@ def teacher_upload_textbook(payload: dict = Body(...)):
     subject_id = payload.get("subject_id")
     title = (payload.get("title") or "").strip()
     author = (payload.get("author") or "Ustoz").strip()
-    grade = (payload.get("grade") or "9-sinf").strip()
+    grade = "Umumiy"
     summary = (payload.get("summary") or "").strip()
     file_url = (payload.get("file_url") or "").strip()
     chapters = payload.get("chapters") or []
@@ -1621,7 +1622,7 @@ def get_library(subject_id: Optional[int] = None, grade: Optional[str] = None, t
 def teacher_create_question(payload: dict = Body(...)):
     teacher_id = payload.get("teacher_id")
     subject_id = payload.get("subject_id", 1)
-    grade = (payload.get("grade") or "9-sinf").strip()
+    grade = "Umumiy"
     chapter_title = (payload.get("chapter_title") or "Umumiy mavzu").strip()
     question_text = (payload.get("question_text") or "").strip()
     options = payload.get("options") or []
@@ -1724,7 +1725,7 @@ def create_teacher_quiz(payload: dict = Body(...)):
     group_id = payload.get("group_id")
     title = (payload.get("title") or "").strip()
     subject_id = payload.get("subject_id", 1)
-    grade = (payload.get("grade") or "9-sinf").strip()
+    grade = "Umumiy"
     time_limit_sec = int(payload.get("time_limit_sec", 30))
     questions_list = payload.get("questions", [])
     passcode = str(payload.get("passcode") or random.randint(1000, 9999)).strip()
@@ -3204,7 +3205,7 @@ def submit_blitz_answer(payload: dict = Body(...)):
         new_eb = f"EB-{secrets.randbelow(90000) + 10000}"
         c.execute("""
             INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score)
-            VALUES (?, 'EduBattle Foydalanuvchi', 'student', 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0)
+            VALUES (?, 'EduBattle Foydalanuvchi', 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0)
         """, (new_eb, hash_password("pass_12345")))
         conn.commit()
         actual_user_id = c.lastrowid
