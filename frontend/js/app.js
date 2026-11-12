@@ -1938,6 +1938,19 @@ async function submitRealPayment() {
 let currentHomeLbPeriod = 'weekly';
 let currentModalLbPeriod = 'weekly';
 
+function getSafeAvatarHTML(avatar, role = 'student', size = 26) {
+  if (avatar && (avatar.startsWith('/uploads/') || avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image/'))) {
+    return `<img src="${escapeHtml(avatar)}" alt="Avatar" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; display:inline-block; border:1px solid rgba(255,255,255,0.25);">`;
+  }
+  // Check if it's a dummy image filename string like avatar.png, avatar_1.png, teacher_1.png, etc.
+  if (!avatar || avatar.includes('.png') || avatar.includes('.jpg') || avatar.includes('.jpeg') || avatar.includes('.webp') || avatar.length > 8) {
+    if (role === 'teacher') return `<span style="font-size:${size - 6}px; line-height:1;">👨‍🏫</span>`;
+    if (role === 'admin') return `<span style="font-size:${size - 6}px; line-height:1;">👑</span>`;
+    return `<span style="font-size:${size - 6}px; line-height:1;">👨‍🎓</span>`;
+  }
+  return `<span style="font-size:${size - 6}px; line-height:1;">${escapeHtml(avatar)}</span>`;
+}
+
 async function loadHomeLeaderboard(period = currentHomeLbPeriod) {
   currentHomeLbPeriod = period;
   const container = document.getElementById('homeLeaderboardList');
@@ -1961,19 +1974,21 @@ async function loadHomeLeaderboard(period = currentHomeLbPeriod) {
     container.innerHTML = top3.map((student, idx) => {
       const coinsVal = period === 'weekly' ? (student.weekly_coins !== undefined ? student.weekly_coins : student.coins) : (student.total_coins !== undefined ? student.total_coins : student.coins);
       const isMe = state.currentUser && state.currentUser.id === student.id;
+      const displayName = (student.full_name && student.full_name.trim()) ? escapeHtml(student.full_name.trim()) : (student.username ? `@${escapeHtml(student.username)}` : "O'quvchi");
+      const avatarHtml = getSafeAvatarHTML(student.avatar, student.role || 'student', 26);
       return `
         <div class="lb-item-card ${cardTopClasses[idx] || ''} ${isMe ? 'is-me' : ''}">
           <div style="display:flex; align-items:center; gap:8px; min-width:0;">
             <div class="lb-rank-badge ${rankBadges[idx] || 'lb-rank-other'}">${medals[idx]}</div>
-            <span style="font-size:16px;">${student.avatar || '👤'}</span>
+            <div style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${avatarHtml}</div>
             <div style="min-width:0;">
               <div style="font-size:12px; font-weight:800; color:#fff; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                <span>${student.full_name || student.username}</span>
+                <span>${displayName}</span>
                 ${student.is_pro ? '<span class="pro-tag-mini" style="font-size:8px; padding:1px 4px;">PRO</span>' : ''}
                 ${isMe ? '<span style="font-size:9px; color:#6366f1; font-weight:800;">(Siz)</span>' : ''}
               </div>
               <div style="font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                ${student.school_lyceum || 'Maktab'} • ${student.grade || ''}
+                ${escapeHtml(student.school_lyceum || 'Maktab')} • ${escapeHtml(student.grade || '')}
               </div>
             </div>
           </div>
@@ -2072,9 +2087,14 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
     // Render User Pinned Rank Banner
     if (userRankBanner && state.currentUser) {
       userRankBanner.style.display = 'flex';
-      if (userRankAvatar) userRankAvatar.textContent = state.currentUser.avatar || '👤';
+      if (userRankAvatar) {
+        userRankAvatar.innerHTML = getSafeAvatarHTML(state.currentUser.avatar, state.currentUser.role, 24);
+      }
       if (userRankName) {
-        userRankName.innerHTML = `${state.currentUser.full_name || state.currentUser.username} <span style="color:#6366f1; font-weight:800;">(#${userRank ? userRank.rank : '-'})</span>`;
+        const myName = (state.currentUser.full_name && state.currentUser.full_name.trim()) 
+          ? escapeHtml(state.currentUser.full_name.trim()) 
+          : (state.currentUser.username ? `@${escapeHtml(state.currentUser.username)}` : "O'quvchi");
+        userRankName.innerHTML = `${myName} <span style="color:#6366f1; font-weight:800;">(#${userRank ? userRank.rank : '-'})</span>`;
       }
       if (userRankMeta) {
         userRankMeta.textContent = period === 'weekly'
@@ -2106,20 +2126,24 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
       const cardClass = isTop3 ? cardTopClasses[idx] : '';
       const isMe = state.currentUser && state.currentUser.id === s.id;
       const coinsVal = period === 'weekly' ? (s.weekly_coins !== undefined ? s.weekly_coins : s.coins) : (s.total_coins !== undefined ? s.total_coins : s.coins);
+      const displayName = (s.full_name && s.full_name.trim()) 
+        ? escapeHtml(s.full_name.trim()) 
+        : (s.username ? `@${escapeHtml(s.username)}` : "O'quvchi");
+      const avatarHtml = getSafeAvatarHTML(s.avatar, s.role || 'student', 26);
 
       return `
         <div class="lb-item-card ${cardClass} ${isMe ? 'is-me' : ''}">
           <div style="display:flex; align-items:center; gap:8px; min-width:0;">
             <div class="lb-rank-badge ${badgeClass}">${rankIcon}</div>
-            <span style="font-size:18px;">${s.avatar || '👤'}</span>
+            <div style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${avatarHtml}</div>
             <div style="min-width:0;">
               <div style="font-size:12px; font-weight:800; color:#fff; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                <span>${s.full_name || s.username}</span>
+                <span>${displayName}</span>
                 ${s.is_pro ? '<span class="pro-tag-mini" style="font-size:8px; padding:1px 4px;">PRO</span>' : ''}
                 ${isMe ? '<span style="font-size:9px; color:#6366f1; font-weight:800;">(Siz)</span>' : ''}
               </div>
               <div style="font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                ${s.school_lyceum || 'Maktab'} • ${s.grade || ''}
+                ${escapeHtml(s.school_lyceum || 'Maktab')} • ${escapeHtml(s.grade || '')}
               </div>
             </div>
           </div>

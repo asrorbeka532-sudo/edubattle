@@ -31,6 +31,28 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+
+    # Sanitize user avatars in database
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            UPDATE users 
+            SET avatar = CASE 
+                WHEN role = 'teacher' THEN '👨‍🏫'
+                WHEN role = 'admin' THEN '👑'
+                ELSE '👨‍🎓'
+            END
+            WHERE avatar IS NULL 
+               OR avatar LIKE '%.png' 
+               OR avatar LIKE '%.jpg' 
+               OR avatar LIKE 'avatar%'
+        """)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Failed to sanitize avatars: {e}")
+
     render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com"
     render_url = render_url.rstrip("/")
 
@@ -536,7 +558,7 @@ def register_user(payload: dict = Body(...), request: Request = None):
             if v_row["telegram_username"]:
                 matched_tg_user = v_row["telegram_username"]
 
-    avatar = "teacher_1.png" if role == "teacher" else "avatar_1.png"
+    avatar = "👨‍🏫" if role == "teacher" else "👨‍🎓"
     is_pro = 1 if role == "teacher" else 0
     hashed_pwd = hash_password(password)
 
@@ -676,7 +698,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, ?, 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
+        VALUES (?, ?, ?, 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, requested_role, 1 if requested_role == 'teacher' else 0, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -696,7 +718,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
 
     c.execute("""
         INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, 'student', 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
+        VALUES (?, ?, 'student', 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
@@ -3182,7 +3204,7 @@ def submit_blitz_answer(payload: dict = Body(...)):
         new_eb = f"EB-{secrets.randbelow(90000) + 10000}"
         c.execute("""
             INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score)
-            VALUES (?, 'EduBattle Foydalanuvchi', 'student', 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, 0, ?, datetime('now'), 0)
+            VALUES (?, 'EduBattle Foydalanuvchi', 'student', 'EduBattle Online', '9-sinf', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0)
         """, (new_eb, hash_password("pass_12345")))
         conn.commit()
         actual_user_id = c.lastrowid

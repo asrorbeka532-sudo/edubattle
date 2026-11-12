@@ -341,10 +341,11 @@ MAIN_ADMIN_KEYBOARD = {
         [{"text": "🛡️ Web Admin Panelni Ochish", "web_app": {"url": NETLIFY_ADMIN_URL}}],
         [{"text": "📊 Jonli Statistika"}, {"text": "💎 PRO Narxini O'zgartirish"}],
         [{"text": "🧾 Kutilayotgan Cheklar"}, {"text": "👑 PRO O'quvchilar"}],
+        [{"text": "👨‍🎓 O'quvchilar Ro'yxati"}, {"text": "🗑️ O'quvchini O'chirish"}],
         [{"text": "📚 Darslik Qo'shish (PDF)"}, {"text": "❓ Test Qo'shish"}],
-        [{"text": "👨‍🎓 O'quvchilar Ro'yxati"}, {"text": "👨‍🏫 Ustozlar (100% Bepul)"}],
-        [{"text": "🔍 Foydalanuvchi Qidirish"}, {"text": "📢 Xabar Tarqatish"}],
-        [{"text": "🗑️ Barcha Testlarni O'chirish"}, {"text": "🔒 Chiqish (Logout)"}]
+        [{"text": "👨‍🏫 Ustozlar (100% Bepul)"}, {"text": "🔍 Foydalanuvchi Qidirish"}],
+        [{"text": "📢 Xabar Tarqatish"}, {"text": "🗑️ Barcha Testlarni O'chirish"}],
+        [{"text": "🔒 Chiqish (Logout)"}]
     ],
     "resize_keyboard": True
 }
@@ -703,7 +704,42 @@ def show_users_list(chat_id: int, role: str):
 
     if total > 25:
         text += f"\n<i>Ko'rsatildi: 25/{total} ta. Muayyan odamni qidirish uchun: <code>/find login</code></i>"
-    send_message(chat_id, text)
+
+    markup = None
+    if role == "student" and rows:
+        inline_buttons = []
+        for u in rows[:15]:
+            inline_buttons.append([
+                {"text": f"🗑️ {u['full_name']} (@{u['username']}) ni o'chirish", "callback_data": f"adm_prompt_del_{u['id']}"}
+            ])
+        markup = {"inline_keyboard": inline_buttons}
+    send_message(chat_id, text, reply_markup=markup)
+
+def show_delete_student_menu(chat_id: int):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id, username, full_name, school_lyceum, grade FROM users WHERE role != 'teacher' AND role != 'admin' ORDER BY id DESC LIMIT 20")
+    rows = c.fetchall()
+    conn.close()
+
+    if not rows:
+        send_message(chat_id, "ℹ️ Hozirda platformada o'quvchilar mavjud emas.")
+        return
+
+    text = (
+        "🗑️ <b>O'QUVCHINI PLATFORMADAN BUTUNLAY O'CHIRISH:</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "O'chirmoqchi bo'lgan o'quvchingizni tanlang yoki buyruq orqali yuboring:\n"
+        "Masalan: <code>/delstudent 16</code> yoki <code>/delstudent @EB-84841</code>\n\n"
+        "<i>Tugmani bosishingiz bilan tasdiqlash oynasi chiqadi:</i>"
+    )
+    inline_buttons = []
+    for u in rows:
+        inline_buttons.append([
+            {"text": f"🗑️ {u['full_name']} (@{u['username']})", "callback_data": f"adm_prompt_del_{u['id']}"}
+        ])
+    markup = {"inline_keyboard": inline_buttons}
+    send_message(chat_id, text, reply_markup=markup)
 
 def find_user(chat_id: int, query: str):
     clean = query.strip().lstrip("@")
@@ -1213,6 +1249,10 @@ def handle_message(msg: dict):
             send_message(chat_id, "PRO beriladigan foydalanuvchi loginini (masalan: <code>EB-84841</code>) kiriting:", reply_markup=CANCEL_KEYBOARD)
         return
 
+    if text in ("🗑️ O'quvchini O'chirish", "🗑️ O'quvchini o'chirish", "O'quvchini o'chirish") or text in ("/delstudent", "/deluser", "/del"):
+        show_delete_student_menu(chat_id)
+        return
+
     if text.startswith("/delstudent") or text.startswith("/deluser") or text.startswith("/delete"):
         parts = text.split(maxsplit=1)
         if len(parts) > 1:
@@ -1249,7 +1289,7 @@ def handle_message(msg: dict):
                 reply_markup=confirm_markup
             )
         else:
-            send_message(chat_id, "ℹ️ Foydalanish: <code>/delstudent &lt;ID yoki @login&gt;</code>\nMasalan: <code>/delstudent 16</code> yoki <code>/delstudent @EB-12345</code>", reply_markup=MAIN_ADMIN_KEYBOARD)
+            show_delete_student_menu(chat_id)
         return
 
     if text.startswith("/setdownloadurl"):
