@@ -120,36 +120,31 @@ const STUDENT_ALLOWED_VIEWS = ['home', 'blitz', 'textbooks', 'battle', 'friends'
 
 function enforceRoleGuard(targetView) {
   const user = state.currentUser;
-  const role = user ? user.role : 'guest';
+
+  // TEACHER PANELS ARE SHUT DOWN COMPLETELY UNTIL EXPLICITLY PERMITTED
+  if (targetView === 'teacher' || targetView === 'teacher-students') {
+    if (!user || user.role !== 'admin') {
+      console.warn("[RoleGuard] O'qituvchi paneli yopilgan.");
+      return 'home';
+    }
+  }
+
+  // Force any existing teacher user to student
+  if (user && user.role === 'teacher') {
+    user.role = 'student';
+    user.is_pro = 0;
+    try { localStorage.setItem('edubattle_user', JSON.stringify(user)); } catch (e) {}
+  }
 
   // Guest users (not logged in): can only view home, textbooks, profile/auth
   if (!user) {
-    if (targetView === 'teacher' || targetView === 'teacher-students' || targetView === 'friends' || targetView === 'battle') {
+    if (targetView === 'friends' || targetView === 'battle') {
       openAuthModal();
       return null;
     }
     return targetView;
   }
 
-  // TEACHER: strictly allowed teacher views only. NEVER leak into student home, battle, or friends!
-  if (role === 'teacher') {
-    if (!TEACHER_ALLOWED_VIEWS.includes(targetView)) {
-      console.warn(`[RoleGuard] O'qituvchi o'quvchi bo'limiga ('${targetView}') o'ta olmaydi. O'qituvchi kabinetiga yo'naltirildi.`);
-      return 'teacher';
-    }
-    return targetView;
-  }
-
-  // STUDENT: strictly allowed student views only. NEVER leak into teacher management portal!
-  if (role === 'student') {
-    if (!STUDENT_ALLOWED_VIEWS.includes(targetView)) {
-      console.warn(`[RoleGuard] O'quvchi o'qituvchi boshqaruviga ('${targetView}') o'ta olmaydi. Asosiy sahifaga yo'naltirildi.`);
-      return 'home';
-    }
-    return targetView;
-  }
-
-  // ADMIN: can access all views
   return targetView;
 }
 
@@ -243,36 +238,9 @@ function updateBottomNavForRole(role) {
         <span style="font-size:16px;">➕</span>
         <span>${tNewSub}</span>
       </button>
-      <button class="nav-tab" id="navTab_teacher" onclick="navigateTo('teacher')">
-        <span style="font-size:16px;">👨‍🏫</span>
-        <span>${tDashboard}</span>
-      </button>
       <button class="nav-tab" id="navTab_profile" onclick="navigateTo('profile')">
         <span style="font-size:16px;">👑</span>
         <span>Admin</span>
-      </button>
-    `;
-  } else if (role === 'teacher') {
-    nav.innerHTML = `
-      <button class="nav-tab active" id="navTab_teacher" onclick="navigateTo('teacher')">
-        <span style="font-size:16px;">👨‍🏫</span>
-        <span>${tDashboard}</span>
-      </button>
-      <button class="nav-tab" id="navTab_textbooks" onclick="navigateTo('textbooks')">
-        <span style="font-size:16px;">📚</span>
-        <span>${tLib}</span>
-      </button>
-      <button class="nav-tab" id="navTab_teacherQuiz" onclick="openCreateQuizModal()">
-        <span style="font-size:16px;">⚡</span>
-        <span>${tQuiz}</span>
-      </button>
-      <button class="nav-tab" id="navTab_teacher-students" onclick="navigateTo('teacher-students')">
-        <span style="font-size:16px;">👥</span>
-        <span>${tStudents}</span>
-      </button>
-      <button class="nav-tab" id="navTab_profile" onclick="navigateTo('profile')">
-        <span style="font-size:16px;">👤</span>
-        <span>${tProfile}</span>
       </button>
     `;
   } else {
@@ -452,7 +420,7 @@ async function initApp() {
                 last_name: tgUser.last_name,
                 username: tgUser.username,
                 language_code: tgUser.language_code,
-                role: urlRole
+                role: 'student'
               })
             });
             if (tgLoginRes.ok) {
@@ -544,6 +512,13 @@ async function initApp() {
       } catch (e) {
         state.currentUser = null;
       }
+    }
+
+    // Demote any teacher role stored in localStorage to student
+    if (state.currentUser && state.currentUser.role === 'teacher') {
+      state.currentUser.role = 'student';
+      state.currentUser.is_pro = 0;
+      localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser));
     }
 
     if (!state.currentUser) {
@@ -883,21 +858,7 @@ async function submitResetPassword() {
 
 let selectedRegRole = 'student';
 function selectRegRole(role) {
-  playSound('click');
-  selectedRegRole = role;
-  const choiceStudent = document.getElementById('roleChoiceStudent');
-  const choiceTeacher = document.getElementById('roleChoiceTeacher');
-  const studentExtra = document.getElementById('studentExtraFields');
-
-  if (role === 'student') {
-    choiceStudent.classList.add('active');
-    choiceTeacher.classList.remove('active');
-    studentExtra.style.display = 'block';
-  } else {
-    choiceTeacher.classList.add('active');
-    choiceStudent.classList.remove('active');
-    studentExtra.style.display = 'none';
-  }
+  selectedRegRole = 'student';
 }
 
 async function submitLogin() {
@@ -1077,38 +1038,16 @@ function updateHeaderAndProfileUI() {
 
   // Toggle Profile Stats & Teacher Switcher: TEACHERS & ADMINS DO NOT HAVE STUDENT GRADES!
   const studentStatsRow = document.getElementById('studentProfileStatsRow');
-  const teacherStatsRow = document.getElementById('teacherProfileStatsRow');
-  const studentDiaryBox = document.getElementById('profileStudentDiaryBox');
-  const teacherDirectAccessBox = document.getElementById('teacherDirectAccessBox');
-  const teacherSwitchPromptBox = document.getElementById('teacherSwitchPromptBox');
-  if (isTeacher || isAdmin) {
-    if (teacherDirectAccessBox) teacherDirectAccessBox.style.display = 'block';
-    if (teacherSwitchPromptBox) teacherSwitchPromptBox.style.display = 'none';
-  } else {
-    if (teacherDirectAccessBox) teacherDirectAccessBox.style.display = 'none';
-    if (teacherSwitchPromptBox) teacherSwitchPromptBox.style.display = 'block';
-  }
+  if (studentStatsRow) studentStatsRow.style.display = 'flex';
 
-  if (isTeacher || isAdmin) {
-    if (studentStatsRow) studentStatsRow.style.display = 'none';
-    if (teacherStatsRow) teacherStatsRow.style.display = 'flex';
-  } else {
-    if (studentStatsRow) studentStatsRow.style.display = 'flex';
-    if (teacherStatsRow) teacherStatsRow.style.display = 'none';
+  const streakEl = document.getElementById('profileStreak');
+  if (streakEl) streakEl.textContent = `${u.streak || 1} kun`;
 
-    const streakEl = document.getElementById('profileStreak');
-    if (streakEl) streakEl.textContent = `${u.streak || 1} kun`;
+  const profileCoinsEl = document.getElementById('profileCoins');
+  if (profileCoinsEl) profileCoinsEl.textContent = `${(u.coins || 0).toLocaleString()} 🪙`;
 
-    const profileCoinsEl = document.getElementById('profileCoins');
-    if (profileCoinsEl) profileCoinsEl.textContent = `${(u.coins || 0).toLocaleString()} 🪙`;
-  }
-
-  // Pro Plan vs Teacher Free Perks Card
   const proPromoCard = document.getElementById('proPromotionCard');
-  if (proPromoCard) proPromoCard.style.display = (isTeacher || isAdmin) ? 'none' : 'block';
-
-  const teacherPerksCard = document.getElementById('teacherFreePerksCard');
-  if (teacherPerksCard) teacherPerksCard.style.display = isTeacher ? 'block' : 'none';
+  if (proPromoCard) proPromoCard.style.display = isAdmin ? 'none' : 'block';
 
   // Kutubxona teacher & admin buttons
   const teacherSubjectToggle = document.getElementById('btnTeacherSubjectToggle');
@@ -3245,25 +3184,8 @@ function copyMyUserId() {
 // ----------------- TEACHER & STUDENT ROLE SWITCHERS -----------------
 async function switchToTeacherRole() {
   playSound('click');
-  if (!state.currentUser) return;
-  state.currentUser.role = 'teacher';
-  state.currentUser.is_pro = 1;
-  localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser));
-  
-  try {
-    if (state.currentUser.id) {
-      await fetch('/api/user/role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: state.currentUser.id, role: 'teacher' })
-      });
-    }
-  } catch (e) {}
-  
-  updateHeaderAndProfileUI();
-  updateBottomNavForRole('teacher');
-  navigateTo('teacher', true);
-  showToast("👨‍🏫 O'qituvchi Kabineti faollashtirildi! Xush kelibsiz, Ustoz!");
+  alert("O'qituvchi paneli yopilgan!");
+  return;
 }
 
 async function switchToStudentRole() {

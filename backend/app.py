@@ -494,9 +494,7 @@ def register_user(payload: dict = Body(...), request: Request = None):
 
     username = (payload.get("username") or "").strip().lower()
     full_name = (payload.get("full_name") or "").strip()
-    role = payload.get("role", "student")
-    if role not in ("student", "teacher"):
-        role = "student"
+    role = "student" # Teacher registration is disabled until further notice
     password = (payload.get("password") or "").strip()
     school_lyceum = (payload.get("school_lyceum") or "Maktab / Litsey").strip()
     grade = (payload.get("grade") or "9-sinf").strip()
@@ -633,9 +631,7 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
     last_name = (payload.get("last_name") or "").strip()
     full_name = f"{first_name} {last_name}".strip() or "Telegram Foydalanuvchi"
     tg_username = (payload.get("username") or "").strip()
-    requested_role = payload.get("role", "student")
-    if requested_role not in ("student", "teacher"):
-        requested_role = "student"
+    requested_role = "student" # Teacher role completely disabled
 
     conn = get_db()
     c = conn.cursor()
@@ -658,12 +654,12 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
             conn.commit()
             user_data["username"] = new_eb
 
-        # If user opened as teacher, activate teacher role (always 100% free with PRO perks)
-        if requested_role == "teacher" and user_data["role"] != "teacher":
-            c.execute("UPDATE users SET role = 'teacher', is_pro = 1 WHERE id = ?", (user_data["id"],))
+        # Ensure teacher role is disabled - convert back to student
+        if user_data["role"] == "teacher":
+            c.execute("UPDATE users SET role = 'student', is_pro = 0 WHERE id = ?", (user_data["id"],))
             conn.commit()
-            user_data["role"] = "teacher"
-            user_data["is_pro"] = 1
+            user_data["role"] = "student"
+            user_data["is_pro"] = 0
 
         token = create_session(user_data["id"], client_ip)
         conn.close()
@@ -2876,14 +2872,14 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 def update_user_role(payload: dict = Body(...)):
     user_id = payload.get("user_id")
     role = payload.get("role")
-    if role not in ("student", "teacher"):
-        raise HTTPException(status_code=400, detail="Invalid role")
+    if role == "teacher":
+        raise HTTPException(status_code=403, detail="O'qituvchi paneli yopilgan! Hech kim o'qituvchi bo'la olmaydi.")
     conn = get_db()
     c = conn.cursor()
-    c.execute("UPDATE users SET role = ?, is_pro = ? WHERE id = ?", (role, 1 if role == 'teacher' else 0, user_id))
+    c.execute("UPDATE users SET role = 'student', is_pro = 0 WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
-    return {"ok": True, "role": role}
+    return {"ok": True, "role": "student"}
 
 # ----------------- TEACHER SEARCH & ADD STUDENT BY ID -----------------
 @app.get("/api/teacher/search-students")

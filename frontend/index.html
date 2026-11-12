@@ -756,22 +756,6 @@
                 <div style="font-size:11px; color:var(--text-muted);">Ketma-ketlik</div>
               </div>
             </div>
-
-            <!-- Teacher Profile Stats Row (Sinflar, O'quvchilar) - NO GRADES FOR TEACHERS -->
-            <div id="teacherProfileStatsRow" style="display:none; justify-content:center; gap:20px; margin-top:14px;">
-              <div>
-                <div style="font-size:14px; font-weight:800; color:var(--accent-green);" id="profileTeacherGroupCount">0</div>
-                <div style="font-size:10px; color:var(--text-muted);">Sinflar</div>
-              </div>
-              <div>
-                <div style="font-size:14px; font-weight:800; color:var(--accent-red);" id="profileTeacherStudentCount">0</div>
-                <div style="font-size:10px; color:var(--text-muted);">O'quvchilar</div>
-              </div>
-              <div>
-                <div style="font-size:14px; font-weight:800; color:var(--text-primary);" id="profileTeacherStatus">Faol</div>
-                <div style="font-size:10px; color:var(--text-muted);">Status</div>
-              </div>
-            </div>
           </div>
 
           <!-- PRO Membership Banner (Faqat O'quvchilar Uchun: 29 000 so'm) -->
@@ -788,49 +772,6 @@
             <button class="btn btn-red" onclick="openPaymentModal('student_pro')">
               💎 PRO Tarifiga Ulanish (<span class="dynamic-pro-price">29 000 so'm</span>)
             </button>
-          </div>
-
-          <!-- O'qituvchilar Paneli Axborot Kartasi -->
-          <div class="minimal-card highlight-green" id="teacherFreePerksCard" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <h4 style="font-size:13px; font-weight:800; color:var(--text-primary);">👨‍🏫 O'qituvchi Portali</h4>
-              <span class="tag tag-subtle">Ustoz</span>
-            </div>
-            <p style="font-size:11px; color:var(--text-muted); margin:4px 0 0; line-height:1.4;">
-              Sinflar va guruhlar ochish, darsliklar yuklash, testlar yaratish hamda o'quvchilar natijalarini kuzatib borish.
-            </p>
-          </div>
-
-          <!-- Teacher Profile Special Card if Teacher -->
-          <div class="minimal-card highlight-green" id="teacherDirectAccessBox" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <h4 style="font-size:13px; font-weight:800; color:var(--text-primary); margin:0;">👨‍🏫 O'qituvchi Kabineti</h4>
-              <span class="tag tag-green">Faol Ustoz</span>
-            </div>
-            <p style="font-size:11px; color:var(--text-muted); margin:4px 0 10px;">Sinflaringiz, guruhlaringiz va o'quvchilar natijalarini boshqarish.</p>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-green btn-sm" onclick="navigateTo('teacher')" style="flex:1;">O'qituvchi Kabinetiga Kirish ➔</button>
-              <button class="btn btn-outline btn-sm" onclick="switchToStudentRole()" style="font-size:10px;" title="O'quvchi rejimida ko'rish">👨‍🎓 O'quvchi rejimi</button>
-            </div>
-          </div>
-
-          <!-- Teacher Role Switcher Card if Student -->
-          <div class="minimal-card" id="teacherSwitchPromptBox" style="display:none; border:1px solid rgba(16, 185, 129, 0.35); background:rgba(16, 185, 129, 0.04); margin-top:12px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size:24px;">👨‍🏫</span>
-              <div style="flex:1;">
-                <h4 style="font-size:13px; font-weight:800; color:var(--text-primary); margin:0;">Siz O'qituvchimisiz?</h4>
-                <p style="font-size:11px; color:var(--text-muted); margin:2px 0 0;">O'qituvchilar uchun sinflar ochish va testlar 100% BEPUL!</p>
-              </div>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:10px;">
-              <button class="btn btn-green btn-sm" onclick="switchToTeacherRole()" style="flex:1; font-weight:800; font-size:11px;">
-                👨‍🏫 O'qituvchi Kabinetiga O'tish
-              </button>
-              <button class="btn btn-outline btn-sm" onclick="openAuthModal()" style="font-weight:700; font-size:11px;">
-                🔑 Boshqa hisobga kirish
-              </button>
-            </div>
           </div>
 
           <!-- Join Group with Invite Code for Students -->
@@ -1178,18 +1119,6 @@
           <div id="regOtpInputGroup" style="display:none; margin-top:8px;">
             <label style="font-size:10px; color:var(--text-secondary);" data-i18n="label_otp_code">Telegram orqali kelgan 6-xonali kod:</label>
             <input type="text" id="regOtpCode" class="input-field" maxlength="6" placeholder="Masalan: 482910" style="margin-bottom:0; letter-spacing:3px; font-weight:800; text-align:center; color:#00f0ff;">
-          </div>
-        </div>
-
-        <label style="font-size:11px; color:var(--text-secondary);" data-i18n="label_your_role">Sizning rolingiz:</label>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-          <div class="grade-item active" id="roleChoiceStudent" onclick="selectRegRole('student')">
-            <div style="font-size:18px;">👨‍🎓</div>
-            <div style="font-size:12px; font-weight:800;" data-i18n="role_student">O'quvchi</div>
-          </div>
-          <div class="grade-item" id="roleChoiceTeacher" onclick="selectRegRole('teacher')">
-            <div style="font-size:18px;">👨‍🏫</div>
-            <div style="font-size:12px; font-weight:800;" data-i18n="role_teacher">O'qituvchi</div>
           </div>
         </div>
 
@@ -2045,11 +1974,11 @@
   </div>
 
   <!-- Scripts with cache buster -->
-  <script src="/js/i18n.js?v=20261112_0945"></script>
-  <script src="/js/app.js?v=20261112_0945"></script>
-  <script src="/js/battle.js?v=20261112_0945"></script>
-  <script src="/js/teacher.js?v=20261112_0945"></script>
-  <script src="/js/admin.js?v=20261112_0945"></script>
+  <script src="/js/i18n.js?v=20261112_1006"></script>
+  <script src="/js/app.js?v=20261112_1006"></script>
+  <script src="/js/battle.js?v=20261112_1006"></script>
+  <script src="/js/teacher.js?v=20261112_1006"></script>
+  <script src="/js/admin.js?v=20261112_1006"></script>
 
   <!-- Clean Service Worker & Caches -->
   <script>

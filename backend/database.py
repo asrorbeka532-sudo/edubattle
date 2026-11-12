@@ -358,8 +358,8 @@ def init_db():
     except:
         pass
 
-    # Ensure all teachers have is_pro = 1 (100% free with all capabilities!)
-    cursor.execute("UPDATE users SET is_pro = 1 WHERE role = 'teacher';")
+    # Teacher role is completely disabled until user permits
+    cursor.execute("UPDATE users SET role = 'student', is_pro = 0 WHERE role = 'teacher';")
 
     # Auto-seed Huquq subject, books and questions if not present
     try:
