@@ -23,7 +23,19 @@ const battleState = {
 // ----------------- QUESTION COUNT SELECTOR -----------------
 function selectBattleQuestionCount(count) {
   playSound('click');
-  battleState.questionCount = parseInt(count) || 5;
+  const targetCount = parseInt(count) || 5;
+
+  if (targetCount === 15 || targetCount === 30) {
+    if (!state.currentUser || !state.currentUser.is_pro) {
+      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
+      if (confirm(`⚡ ${targetCount} talik batllar uchun har ikki tomon ham PRO obunaga ega bo'lishi kerak! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
+        openPaymentModal('student_pro');
+      }
+      return;
+    }
+  }
+
+  battleState.questionCount = targetCount;
   ['5', '15', '30'].forEach(c => {
     const el = document.getElementById(`qCount${c}Btn`);
     if (el) {
@@ -162,6 +174,12 @@ function connectToBattleWebSocket(roomCode) {
 function handleBattleMessage(msg) {
   if (msg.type === 'error') {
     alert(msg.message);
+    if (msg.message && msg.message.includes('PRO')) {
+      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
+      if (confirm(`⚡ Ushbu batlda qatnashish uchun PRO obuna talab qilinadi. Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
+        openPaymentModal('student_pro');
+      }
+    }
     resetBattleLobby();
     return;
   }

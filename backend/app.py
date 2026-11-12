@@ -2536,10 +2536,34 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
 
                 player_id = data.get("user_id")
                 player_name = data.get("name", "O'yinchi")
-                is_pro = bool(data.get("is_pro", False))
                 avatar = data.get("avatar", "avatar_1.png")
 
-                # If room mode is 'pro_3_5', require either host or joining user or allow if room created as PRO
+                # Verify player PRO status from database
+                conn = get_db()
+                c = conn.cursor()
+                c.execute("SELECT is_pro FROM users WHERE id = ?", (player_id,))
+                p_row = c.fetchone()
+                conn.close()
+                is_pro = bool(p_row["is_pro"]) if p_row else False
+
+                # 15 and 30 questions battle requires PRO for BOTH sides!
+                if getattr(room, "question_count", 5) in (15, 30) and not is_pro:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": f"Ushbu batl {room.question_count} talik testlardan iborat. Unda qatnashish uchun har ikki tomon ham PRO obunaga ega bo'lishi kerak!"
+                    })
+                    await websocket.close()
+                    return
+
+                # If room mode is 'pro_3_5', require joining user to also be PRO
+                if room.mode == "pro_3_5" and not is_pro:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "3-5 kishilik guruhli batllarda qatnashish uchun PRO obuna talab qilinadi!"
+                    })
+                    await websocket.close()
+                    return
+
                 room.players[player_key] = {
                     "key": player_key,
                     "id": player_id,
@@ -2863,8 +2887,22 @@ def create_battle_room(payload: dict = Body(...)):
     if question_count not in (5, 15, 30):
         question_count = 5
 
+    # Check host PRO status from DB
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT is_pro FROM users WHERE id = ?", (host_id,))
+    u_row = c.fetchone()
+    conn.close()
+    host_is_pro = bool(u_row["is_pro"]) if u_row else False
+
+    # 15 and 30 questions require PRO subscription
+    if question_count in (15, 30) and not host_is_pro:
+        raise HTTPException(status_code=403, detail="15 va 30 talik testlar bilan batl o'ynash uchun PRO obuna talab qilinadi!")
+
     # Free users can do 2 players. PRO users can select 3, 4, or 5 players!
     if mode == "pro_3_5":
+        if not host_is_pro:
+            raise HTTPException(status_code=403, detail="3-5 kishilik guruhli batllar uchun PRO obuna talab qilinadi!")
         max_players = min(max(requested_max, 3), 5)
     else:
         max_players = 2
