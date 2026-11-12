@@ -52,6 +52,28 @@ def on_startup():
         c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
+
+        # Seed/ensure 2020+ new generation textbooks
+        c.execute("SELECT COUNT(*) FROM textbooks WHERE uploaded_by IS NULL")
+        official_count = c.fetchone()[0]
+        bundled_json_path = os.path.join(os.path.dirname(__file__), "bundled_textbooks.json")
+        if official_count < 50 and os.path.exists(bundled_json_path):
+            try:
+                with open(bundled_json_path, "r", encoding="utf-8") as bf:
+                    seed_books = json.load(bf)
+                c.execute("DELETE FROM textbooks WHERE uploaded_by IS NULL")
+                for sb in seed_books:
+                    c.execute("""
+                        INSERT INTO textbooks (id, subject_id, title, author, grade, cover_image, summary, chapters, uploaded_by, file_url)
+                        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, NULL, ?)
+                    """, (
+                        sb["id"], sb["subject_id"], sb["title"], sb["author"], sb["grade"],
+                        sb.get("summary", ""), json.dumps(sb.get("chapters", []), ensure_ascii=False),
+                        sb.get("file_url")
+                    ))
+            except Exception as se:
+                print(f"Error seeding new textbooks: {se}")
+
         conn.commit()
         conn.close()
     except Exception as e:
