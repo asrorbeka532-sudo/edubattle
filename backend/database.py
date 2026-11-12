@@ -361,6 +361,17 @@ def init_db():
     # Ensure all teachers have is_pro = 1 (100% free with all capabilities!)
     cursor.execute("UPDATE users SET is_pro = 1 WHERE role = 'teacher';")
 
+    # Auto-seed Huquq subject, books and questions if not present
+    try:
+        cursor.execute("SELECT count(*) FROM questions WHERE subject_id = 9;")
+        row_cnt = cursor.fetchone()
+        if not row_cnt or row_cnt[0] < 200:
+            from insert_huquq_module import insert_all_huquq
+            conn.commit()
+            insert_all_huquq()
+    except Exception as e:
+        print(f"Huquq auto-seed check: {e}")
+
     conn.commit()
     conn.close()
 
