@@ -3478,6 +3478,7 @@ async function submitBlitzChoice(selectedIndex) {
 
       // Update user state coins
       if (state.currentUser) {
+        if (result.user_id) state.currentUser.id = result.user_id;
         state.currentUser.coins = result.new_coins;
         state.currentUser.xp = 0;
         localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser));
@@ -3505,7 +3506,8 @@ async function submitBlitzChoice(selectedIndex) {
       buttons.forEach(b => b.disabled = false);
     }
   } catch (e) {
-    alert("Serverga ulanishda xatolik!");
+    console.warn("Blitz submit network error:", e);
+    alert("Server hozir yangilandi yoki aloqa uzildi. Qaytadan urinib ko'ring.");
     buttons.forEach(b => b.disabled = false);
   }
 }

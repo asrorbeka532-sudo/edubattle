@@ -3096,11 +3096,17 @@ def submit_blitz_answer(payload: dict = Body(...)):
     c.execute("SELECT id, is_pro, coins FROM users WHERE id = ? OR telegram_id = ?", (user_id, user_id))
     u = c.fetchone()
     if not u:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
-        
-    actual_user_id = u["id"]
-    is_pro = bool(u["is_pro"])
+        new_eb = f"EB-{secrets.randbelow(90000) + 10000}"
+        c.execute("""
+            INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score)
+            VALUES (?, 'EduBattle Foydalanuvchi', 'student', 'EduBattle Online', '9-sinf', 'avatar1.png', 0, 0, 1, 0, ?, datetime('now'), 0)
+        """, (new_eb, hash_password("pass_12345")))
+        conn.commit()
+        actual_user_id = c.lastrowid
+        is_pro = False
+    else:
+        actual_user_id = u["id"]
+        is_pro = bool(u["is_pro"])
 
     # Check duplicate
     c.execute("SELECT id FROM blitz_submissions WHERE user_id = ? AND subject_id = ? AND minute_epoch = ?", (actual_user_id, subject_id, minute_epoch))
@@ -3154,7 +3160,8 @@ def submit_blitz_answer(payload: dict = Body(...)):
         "is_pro": is_pro,
         "explanation": q.get("explanation") or "To'g'ri javob qayd etildi.",
         "new_coins": new_stats["coins"],
-        "new_xp": 0
+        "new_xp": 0,
+        "user_id": actual_user_id
     }
 
 
