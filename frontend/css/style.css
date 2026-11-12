@@ -650,6 +650,24 @@ body {
   background: var(--accent-red-soft);
 }
 
+.battle-qcount-choice {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-card);
+  transition: var(--transition);
+}
+.battle-qcount-choice:hover {
+  border-color: rgba(225, 29, 72, 0.5);
+}
+.battle-qcount-choice.selected {
+  border-color: var(--accent-red);
+  background: var(--accent-red-soft);
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.2);
+}
+
 .battle-arena-players {
   display: flex;
   justify-content: center;

@@ -8,6 +8,7 @@ const battleState = {
   roomCode: null,
   mode: '1v1',
   maxPlayers: 2,
+  questionCount: 5,
   isHost: false,
   myPlayerKey: null,
   currentQuestion: null,
@@ -18,6 +19,22 @@ const battleState = {
   hasAnsweredCurrent: false,
   roomPlayers: []
 };
+
+// ----------------- QUESTION COUNT SELECTOR -----------------
+function selectBattleQuestionCount(count) {
+  playSound('click');
+  battleState.questionCount = parseInt(count) || 5;
+  ['5', '15', '30'].forEach(c => {
+    const el = document.getElementById(`qCount${c}Btn`);
+    if (el) {
+      if (parseInt(c) === battleState.questionCount) {
+        el.classList.add('selected');
+      } else {
+        el.classList.remove('selected');
+      }
+    }
+  });
+}
 
 // ----------------- MODE SELECTOR -----------------
 function selectBattleMode(mode) {
@@ -75,7 +92,8 @@ async function createBattleRoom() {
         host_name: user.full_name,
         subject_id: subjectId,
         mode: battleState.mode,
-        max_players: battleState.maxPlayers
+        max_players: battleState.maxPlayers,
+        question_count: battleState.questionCount || 5
       })
     });
     const data = await res.json();
@@ -171,9 +189,10 @@ function renderWaitingRoom(data) {
   document.getElementById('battleWaitingScreen').style.display = 'block';
 
   document.getElementById('waitingRoomCode').textContent = data.room_code;
+  const qCount = data.question_count || battleState.questionCount || 5;
   document.getElementById('waitingRoomBadge').textContent = data.mode === 'pro_3_5' 
-    ? `PRO BATL (${data.max_players} KISHILIK)` 
-    : '1v1 DO\'STONA DUEL';
+    ? `PRO BATL (${data.max_players} KISHILIK • ${qCount} TA TEST)` 
+    : `1v1 DUEL (${qCount} TA TEST)`;
 
   const arena = document.getElementById('waitingPlayersArena');
   arena.innerHTML = '';

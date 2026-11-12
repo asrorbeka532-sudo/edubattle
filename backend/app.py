@@ -250,13 +250,14 @@ def generate_auto_login_sync() -> str:
 
 # ----------------- IN-MEMORY BATTLE ROOM MANAGER -----------------
 class BattleRoom:
-    def __init__(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int = 2):
+    def __init__(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int = 2, question_count: int = 5):
         self.room_code = room_code
         self.mode = mode  # '1v1' or 'pro_3_5'
         self.host_id = host_id
         self.host_name = host_name
         self.subject_id = subject_id
         self.max_players = max_players  # 2 for free, 3 to 5 for pro
+        self.question_count = question_count if question_count in (5, 15, 30) else 5
         self.players: Dict[str, dict] = {} # websocket_id -> player info
         self.sockets: Dict[str, WebSocket] = {}
         self.status = "waiting" # 'waiting', 'playing', 'finished'
@@ -273,8 +274,8 @@ class BattleManager:
     def __init__(self):
         self.rooms: Dict[str, BattleRoom] = {}
 
-    def create_room(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int) -> BattleRoom:
-        room = BattleRoom(room_code, mode, host_id, host_name, subject_id, max_players)
+    def create_room(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int, question_count: int = 5) -> BattleRoom:
+        room = BattleRoom(room_code, mode, host_id, host_name, subject_id, max_players, question_count)
         self.rooms[room_code] = room
         return room
 
@@ -2573,25 +2574,35 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
                     await broadcast_room_state(room)
 
             elif action == "start":
-                # Fetch questions for this battle
+                # Fetch questions for this battle (5, 15, or 30 questions)
+                limit_cnt = getattr(room, "question_count", 5)
+                if limit_cnt not in (5, 15, 30):
+                    limit_cnt = 5
+
                 conn = get_db()
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT id, question_text, options, correct_index, explanation, difficulty 
                     FROM questions 
                     WHERE subject_id = ? 
-                    ORDER BY RANDOM() LIMIT 5
-                """, (room.subject_id,))
-                q_rows = cursor.fetchall()
-                conn.close()
+                    ORDER BY RANDOM() LIMIT ?
+                """, (room.subject_id, limit_cnt))
+                q_rows = list(cursor.fetchall())
 
-                if not q_rows:
-                    # fallback to any questions
-                    conn = get_db()
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT id, question_text, options, correct_index, explanation, difficulty FROM questions ORDER BY RANDOM() LIMIT 5")
-                    q_rows = cursor.fetchall()
-                    conn.close()
+                # If subject has fewer questions than requested, top up with other subjects
+                if len(q_rows) < limit_cnt:
+                    needed = limit_cnt - len(q_rows)
+                    existing_ids = [r["id"] for r in q_rows] or [-1]
+                    placeholders = ",".join("?" for _ in existing_ids)
+                    cursor.execute(f"""
+                        SELECT id, question_text, options, correct_index, explanation, difficulty 
+                        FROM questions 
+                        WHERE id NOT IN ({placeholders})
+                        ORDER BY RANDOM() LIMIT ?
+                    """, (*existing_ids, needed))
+                    more_rows = cursor.fetchall()
+                    q_rows.extend(more_rows)
+                conn.close()
 
                 questions = []
                 for q in q_rows:
@@ -2697,6 +2708,7 @@ async def broadcast_room_state(room: BattleRoom):
         "room_code": room.room_code,
         "mode": room.mode,
         "max_players": room.max_players,
+        "question_count": getattr(room, "question_count", 5),
         "status": room.status,
         "player_count": len(players_list),
         "players": players_list,
@@ -2847,6 +2859,9 @@ def create_battle_room(payload: dict = Body(...)):
     subject_id = payload.get("subject_id", 1)
     mode = payload.get("mode", "1v1") # '1v1' or 'pro_3_5'
     requested_max = int(payload.get("max_players", 2))
+    question_count = int(payload.get("question_count", 5))
+    if question_count not in (5, 15, 30):
+        question_count = 5
 
     # Free users can do 2 players. PRO users can select 3, 4, or 5 players!
     if mode == "pro_3_5":
@@ -2856,13 +2871,14 @@ def create_battle_room(payload: dict = Body(...)):
 
     # Generate 6-digit room code
     room_code = f"BATL{random.randint(1000, 9999)}"
-    battle_manager.create_room(room_code, mode, host_id, host_name, subject_id, max_players)
+    battle_manager.create_room(room_code, mode, host_id, host_name, subject_id, max_players, question_count)
 
     return {
         "success": True,
         "room_code": room_code,
         "mode": mode,
-        "max_players": max_players
+        "max_players": max_players,
+        "question_count": question_count
     }
 
 # ----------------- STATIC FILES & FRONTEND -----------------
