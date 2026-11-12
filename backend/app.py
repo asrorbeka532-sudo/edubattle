@@ -2433,7 +2433,10 @@ def toggle_user_pro(payload: dict = Body(...)):
         conn.close()
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
     new_status = 0 if user["is_pro"] else 1
-    cursor.execute("UPDATE users SET is_pro = ? WHERE id = ?", (new_status, user_id))
+    if new_status == 1:
+        cursor.execute("UPDATE users SET is_pro = 1, pro_expires_at = datetime('now', '+30 days') WHERE id = ?", (user_id,))
+    else:
+        cursor.execute("UPDATE users SET is_pro = 0, pro_expires_at = NULL WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
     bump_data_revision()
