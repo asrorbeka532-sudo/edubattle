@@ -49,6 +49,9 @@ def on_startup():
                OR avatar LIKE 'avatar%'
         """)
         c.execute("UPDATE users SET grade = 'Umumiy' WHERE role = 'student' OR grade != 'Umumiy'")
+        c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
+        c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
         conn.commit()
         conn.close()
     except Exception as e:

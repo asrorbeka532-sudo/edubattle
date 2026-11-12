@@ -53,8 +53,8 @@ def get_teacher_app_url():
     t_url = get_live_tunnel_url()
     return f"{t_url}/?role=teacher&v=20261111_1148"
 
-PAYMENT_CARD = "9860 0301 2345 6789"
-PAYMENT_CARD_HOLDER = "EduBattle Platformasi"
+PAYMENT_CARD = "9860160632168334"
+PAYMENT_CARD_HOLDER = "ABDULLAYEV A"
 PRO_PRICE = 29000
 
 def get_db():
@@ -695,8 +695,9 @@ def show_payment_details(chat_id, user_id, method, message_id=None):
     pay_text = (
         f"💳 <b>{method_name.upper()}</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 <b>Qabul qiluvchi:</b> {PAYMENT_CARD_HOLDER}\n"
+        f"👤 <b>Karta egasi:</b> <b>{PAYMENT_CARD_HOLDER}</b>\n"
         f"🔢 <b>Karta raqami:</b> <code>{PAYMENT_CARD}</code>\n"
+        f"<i>(Karta raqamidan nusxa olish uchun ustiga bosing)</i>\n"
         f"💰 <b>To'lov summasi:</b> <b>{formatted_price} so'm</b>\n"
         f"📝 <b>To'lov izohi:</b> <code>{u['username']}</code>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
