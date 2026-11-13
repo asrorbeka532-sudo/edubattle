@@ -3259,7 +3259,7 @@ function openOrDownloadPdf(pdfUrl, bookTitle) {
 
 let activeBlitzSubjectId = 1;
 let blitzTickerInterval = null;
-let currentBlitzSecondsLeft = 60;
+let currentBlitzSecondsLeft = 30;
 let currentBlitzMinuteEpoch = 0;
 let currentBlitzQuestionData = null;
 
@@ -3324,7 +3324,7 @@ async function loadCurrentBlitzQuestion(subjectId) {
     if (!res.ok) throw new Error("Yuklab bo'lmadi");
     const data = await res.json();
     currentBlitzQuestionData = data;
-    currentBlitzSecondsLeft = data.seconds_left || 60;
+    currentBlitzSecondsLeft = data.seconds_left || 30;
     currentBlitzMinuteEpoch = data.minute_epoch;
 
     renderBlitzQuestionData(data);
@@ -3463,15 +3463,16 @@ function startBlitzCountdownTicker() {
 
   blitzTickerInterval = setInterval(() => {
     const now = Date.now();
-    const currentEpochMin = Math.floor(now / 60000);
-    const sec = 60 - (Math.floor(now / 1000) % 60);
+    const BLITZ_PERIOD = 30;
+    const currentEpoch = Math.floor(now / (BLITZ_PERIOD * 1000));
+    const sec = BLITZ_PERIOD - (Math.floor(now / 1000) % BLITZ_PERIOD);
     currentBlitzSecondsLeft = sec;
 
     const timerVal = document.getElementById('blitzTimerVal');
     if (timerVal) {
       const formatted = (sec < 10 ? '0' : '') + sec;
       timerVal.textContent = `00:${formatted}`;
-      if (sec <= 10) {
+      if (sec <= 5) {
         timerVal.style.color = '#ef4444';
       } else {
         timerVal.style.color = '#f59e0b';
@@ -3481,11 +3482,11 @@ function startBlitzCountdownTicker() {
     const waitEl = document.getElementById('blitzWaitSec');
     if (waitEl) waitEl.textContent = `${sec}s`;
 
-    // Critical live sync: If current minute epoch has changed (e.g. app was paused in background),
-    // OR if second rolls over to 0/60, immediately fetch the live current synchronized question!
-    if (currentBlitzMinuteEpoch && currentEpochMin !== currentBlitzMinuteEpoch) {
+    // Critical live sync: If current epoch has changed (e.g. app was paused in background),
+    // OR if second rolls over to 0/30, immediately fetch the live current synchronized question!
+    if (currentBlitzMinuteEpoch && currentEpoch !== currentBlitzMinuteEpoch) {
       loadCurrentBlitzQuestion(activeBlitzSubjectId);
-    } else if (sec === 60 || sec === 0) {
+    } else if (sec === BLITZ_PERIOD || sec === 0) {
       loadCurrentBlitzQuestion(activeBlitzSubjectId);
     }
   }, 1000);
@@ -3494,8 +3495,8 @@ function startBlitzCountdownTicker() {
 // Background resume listener: instantly syncs the question when user switches back to app
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && state.currentView === 'blitz') {
-    const nowMin = Math.floor(Date.now() / 60000);
-    if (!currentBlitzMinuteEpoch || nowMin !== currentBlitzMinuteEpoch) {
+    const nowEpoch = Math.floor(Date.now() / 30000);
+    if (!currentBlitzMinuteEpoch || nowEpoch !== currentBlitzMinuteEpoch) {
       loadCurrentBlitzQuestion(activeBlitzSubjectId);
     }
     startBlitzCountdownTicker();
@@ -3504,8 +3505,8 @@ document.addEventListener('visibilitychange', () => {
 
 window.addEventListener('focus', () => {
   if (state.currentView === 'blitz') {
-    const nowMin = Math.floor(Date.now() / 60000);
-    if (!currentBlitzMinuteEpoch || nowMin !== currentBlitzMinuteEpoch) {
+    const nowEpoch = Math.floor(Date.now() / 30000);
+    if (!currentBlitzMinuteEpoch || nowEpoch !== currentBlitzMinuteEpoch) {
       loadCurrentBlitzQuestion(activeBlitzSubjectId);
     }
   }

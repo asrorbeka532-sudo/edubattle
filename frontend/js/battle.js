@@ -194,6 +194,8 @@ function handleBattleMessage(msg) {
     showRoundResult(msg);
   } else if (msg.type === 'game_over') {
     showGameOver(msg);
+  } else if (msg.type === 'player_left') {
+    alert(msg.message || "Raqibingiz batlni bekor qildi.");
   } else if (msg.type === 'reaction') {
     showFloatingReaction(msg);
   }
@@ -570,9 +572,47 @@ function showFloatingReaction(data) {
   }
 }
 
+function cancelBattleGame() {
+  playSound('click');
+  const activeStage = document.getElementById('battleActiveStage');
+  const isPlaying = activeStage && activeStage.style.display === 'block';
+  const confirmMsg = isPlaying 
+    ? "Haqiqatan ham ushbu batlni bekor qilib, chiqib ketmoqchimisiz?" 
+    : "Batl xonasidan chiqmoqchimisiz?";
+    
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  if (battleState.timerInterval) {
+    clearInterval(battleState.timerInterval);
+    battleState.timerInterval = null;
+  }
+
+  if (battleState.socket && battleState.socket.readyState === WebSocket.OPEN) {
+    try {
+      battleState.socket.send(JSON.stringify({ action: 'leave' }));
+    } catch (e) {}
+    try {
+      battleState.socket.close();
+    } catch (e) {}
+  }
+  battleState.socket = null;
+  battleState.roomCode = null;
+  battleState.currentQuestion = null;
+
+  resetBattleLobby();
+}
+
 function resetBattleLobby() {
+  if (battleState.timerInterval) {
+    clearInterval(battleState.timerInterval);
+    battleState.timerInterval = null;
+  }
   if (battleState.socket) {
-    battleState.socket.close();
+    try {
+      battleState.socket.close();
+    } catch (e) {}
     battleState.socket = null;
   }
   closeBattleStickerDrawer();

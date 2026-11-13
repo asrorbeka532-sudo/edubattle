@@ -2941,9 +2941,13 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
                     except Exception:
                         pass
 
+            elif action in ("leave", "cancel"):
+                break
+
     except WebSocketDisconnect:
         pass
     finally:
+        leaving_player = room.players.get(player_key)
         if player_key in room.players:
             del room.players[player_key]
         if player_key in room.sockets:
@@ -2952,7 +2956,32 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
         if len(room.players) == 0:
             battle_manager.remove_room(room_code)
         else:
-            await broadcast_room_state(room)
+            if room.status == "playing":
+                p_name = leaving_player.get("name", "O'yinchi") if leaving_player else "O'yinchi"
+                real_players = [p for p in room.players.values() if not p.get("is_bot")]
+                if len(real_players) == 0 or len(room.players) <= 1:
+                    for ws in list(room.sockets.values()):
+                        try:
+                            await ws.send_json({
+                                "type": "player_left",
+                                "message": f"{p_name} batlni bekor qildi. Siz g'olib bo'ldingiz!"
+                            })
+                        except:
+                            pass
+                    await finish_game(room)
+                else:
+                    for ws in list(room.sockets.values()):
+                        try:
+                            await ws.send_json({
+                                "type": "player_left",
+                                "message": f"{p_name} batlni bekor qildi."
+                            })
+                        except:
+                            pass
+                    if len(room.answers_this_round) >= len(room.players):
+                        await reveal_round_results(room)
+            else:
+                await broadcast_room_state(room)
 
 async def broadcast_room_state(room: BattleRoom):
     players_list = list(room.players.values())
@@ -3269,8 +3298,9 @@ def check_user_test_limit(user_id: int):
 @app.get("/api/blitz/current")
 def get_current_blitz_question(subject_id: int = Query(1), user_id: int = Query(0)):
     now = time.time()
-    current_minute = int(now // 60)
-    seconds_left = max(0, 60 - int(now % 60))
+    BLITZ_PERIOD = 30
+    current_minute = int(now // BLITZ_PERIOD)
+    seconds_left = max(0, BLITZ_PERIOD - int(now % BLITZ_PERIOD))
     
     conn = get_db()
     c = conn.cursor()
@@ -3362,11 +3392,12 @@ def submit_blitz_answer(payload: dict = Body(...)):
     selected_index = payload.get("selected_index", -1)
     
     now = time.time()
-    real_minute = int(now // 60)
+    BLITZ_PERIOD = 30
+    real_minute = int(now // BLITZ_PERIOD)
     
-    # Allow submission within 5s grace of minute transition
+    # Allow submission within 1 epoch grace of interval transition
     if abs(real_minute - minute_epoch) > 1:
-        raise HTTPException(status_code=400, detail="Vaqt tugadi! Yangi daqiqa savoliga o'ting.")
+        raise HTTPException(status_code=400, detail="Vaqt tugadi! Yangi 30 soniyalik savolga o'ting.")
         
     conn = get_db()
     c = conn.cursor()
@@ -3391,7 +3422,7 @@ def submit_blitz_answer(payload: dict = Body(...)):
     c.execute("SELECT id FROM blitz_submissions WHERE user_id = ? AND subject_id = ? AND minute_epoch = ?", (actual_user_id, subject_id, minute_epoch))
     if c.fetchone():
         conn.close()
-        return {"success": False, "message": "Ushbu daqiqadagi savolga allaqachon javob berdingiz!"}
+        return {"success": False, "message": "Ushbu 30 soniyalik savolga allaqachon javob berdingiz!"}
     
     # Get question for this minute
     c.execute("SELECT * FROM questions WHERE subject_id = ? ORDER BY id ASC", (subject_id,))
@@ -3421,7 +3452,7 @@ def submit_blitz_answer(payload: dict = Body(...)):
     if coins_earned > 0:
         c.execute("""
             INSERT INTO coin_transactions (user_id, amount, reason, created_at)
-            VALUES (?, ?, '1 daqiqalik Blitz turniri', datetime('now'))
+            VALUES (?, ?, '30 soniyalik Blitz turniri', datetime('now'))
         """, (actual_user_id, coins_earned))
     
     conn.commit()

@@ -210,7 +210,7 @@
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
               <div class="hero-glow-tag">
                 <span class="live-dot-pulse"></span>
-                <span>⚡ JONLI GLOBAL BLITZ • HAR DAQIQA</span>
+                <span>⚡ JONLI GLOBAL BLITZ • HAR 30 SONIYA</span>
               </div>
               <span class="pro-tag-mini" style="font-size:10px; padding:3px 8px;">PRO: 2.5X TANGA 👑</span>
             </div>
@@ -218,7 +218,7 @@
               Respublika O'quvchilari Bilan Sinxron Bellashuv 🚀
             </h3>
             <p class="hero-banner-desc">
-              Har 60 soniyada butun O'zbekiston bo'ylab yagona savol. To'g'ri javobga tangalar to'plang!
+              Har 30 soniyada butun O'zbekiston bo'ylab yagona savol. To'g'ri javobga tangalar to'plang!
             </p>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
               <div class="hero-reward-pill">
@@ -359,10 +359,10 @@
             </div>
             
             <h2 style="font-size:18px; font-weight:900; color:#fff; line-height:1.2; margin-bottom:4px;">
-              ⚡ 1 Daqiqalik Global Blitz
+              ⚡ 30 Soniyalik Global Blitz
             </h2>
             <p style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">
-              Fanni tanlang. Har 60 soniyada respublika bo'ylab yangi savol chiqadi. To'g'ri javobga <b style="color:#f59e0b;">+10 🪙</b> (PRO uchun <b style="color:#f59e0b;">+25 🪙</b>)!
+              Fanni tanlang. Har 30 soniyada respublika bo'ylab yangi savol chiqadi. To'g'ri javobga <b style="color:#f59e0b;">+10 🪙</b> (PRO uchun <b style="color:#f59e0b;">+25 🪙</b>)!
             </p>
 
             <!-- Subject Chips -->
@@ -393,9 +393,9 @@
                 </div>
               </div>
 
-              <!-- Sync 60s Countdown Timer -->
+              <!-- Sync 30s Countdown Timer -->
               <div class="blitz-timer-container">
-                <div class="blitz-timer-val" id="blitzTimerVal">00:60</div>
+                <div class="blitz-timer-val" id="blitzTimerVal">00:30</div>
                 <div class="blitz-timer-sub">Keyingi savolga</div>
               </div>
             </div>
@@ -550,9 +550,14 @@
                 <button type="button" class="btn btn-sm btn-subtle" onclick="openBattleStickerDrawer()" style="background:rgba(255,255,255,0.08); font-size:11px; padding:5px 10px; border-radius:20px;">🎭 Barchasi...</button>
               </div>
 
-              <button class="btn btn-red" id="startBattleBtn" onclick="startBattleGame()" disabled>
-                ⚔️ Batlni Boshlash
-              </button>
+              <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn btn-red" id="startBattleBtn" onclick="startBattleGame()" disabled style="flex:1;">
+                  ⚔️ Batlni Boshlash
+                </button>
+                <button class="btn btn-outline" onclick="cancelBattleGame()" style="border-color:#ef4444; color:#ef4444; font-weight:700;">
+                  ❌ Chiqish
+                </button>
+              </div>
             </div>
           </div>
 
@@ -565,9 +570,14 @@
                   <span id="battleQCounter" style="font-size:14px; font-weight:800; color:var(--text-primary);">1 / 5</span>
                 </div>
                 <div style="width:40px; height:40px; border-radius:50%; border:2px solid var(--accent-red); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:var(--accent-red);" id="battleTimerBox">15</div>
-                <div>
-                  <span style="font-size:10px; color:var(--text-muted);">Ochko:</span>
-                  <span id="battleMyScore" style="font-size:14px; font-weight:800; color:var(--accent-green);">0</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div>
+                    <span style="font-size:10px; color:var(--text-muted);">Ochko:</span>
+                    <span id="battleMyScore" style="font-size:14px; font-weight:800; color:var(--accent-green);">0</span>
+                  </div>
+                  <button class="btn btn-outline btn-sm" onclick="cancelBattleGame()" style="padding:4px 8px; font-size:11px; border-color:rgba(239,68,68,0.5); color:#ef4444; border-radius:8px; font-weight:700;" title="Batlni bekor qilish">
+                    ❌ Chiqish
+                  </button>
                 </div>
               </div>
 
@@ -592,6 +602,12 @@
               </div>
 
               <div style="display:flex; justify-content:space-around; background:rgba(0,0,0,0.4); padding:6px; border-radius:6px; margin-top:12px;" id="battleLiveStandings"></div>
+
+              <div style="text-align:center; margin-top:12px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="cancelBattleGame()" style="font-size:11px; color:#ef4444; border-color:rgba(239,68,68,0.3); padding:5px 16px; border-radius:20px; font-weight:600;">
+                  🏳️ Batlni bekor qilish (Taslim bo'lish)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1577,7 +1593,7 @@
 
       <!-- Footer Info -->
       <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); text-align:center; font-size:10px; color:var(--text-muted);">
-        ⚡ Tangalar: Testlar, 1 daqiqalik Blitz turniri va PvP Batllar orqali beriladi. PRO a'zolar 2.5x ko'p tanga oladilar!
+        ⚡ Tangalar: Testlar, 30 soniyalik Blitz turniri va PvP Batllar orqali beriladi. PRO a'zolar 2.5x ko'p tanga oladilar!
       </div>
     </div>
   </div>
