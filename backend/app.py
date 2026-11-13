@@ -1133,24 +1133,22 @@ def get_leaderboard(period: str = "weekly", user_id: Optional[int] = None):
     if period == "weekly":
         cursor.execute("""
             SELECT u.id, u.username, u.full_name, u.school_lyceum, u.grade, u.avatar, u.xp,
-                   COALESCE(SUM(ct.amount), 0) as weekly_coins,
+                   MAX(COALESCE((SELECT SUM(amount) FROM coin_transactions WHERE user_id = u.id AND created_at >= datetime('now', '-7 days')), 0), u.coins) as weekly_coins,
                    u.coins as total_coins,
                    u.grade_score, u.streak, u.is_pro
             FROM users u
-            LEFT JOIN coin_transactions ct ON ct.user_id = u.id AND ct.created_at >= datetime('now', '-7 days')
-            WHERE u.role = 'student'
-            GROUP BY u.id
+            WHERE u.role IN ('student', 'admin')
             ORDER BY weekly_coins DESC, total_coins DESC
             LIMIT 50
         """)
     else:  # all_time
         cursor.execute("""
             SELECT u.id, u.username, u.full_name, u.school_lyceum, u.grade, u.avatar, u.xp,
-                   COALESCE((SELECT SUM(amount) FROM coin_transactions WHERE user_id = u.id AND created_at >= datetime('now', '-7 days')), 0) as weekly_coins,
+                   u.coins as weekly_coins,
                    u.coins as total_coins,
                    u.grade_score, u.streak, u.is_pro
             FROM users u
-            WHERE u.role = 'student'
+            WHERE u.role IN ('student', 'admin')
             ORDER BY u.coins DESC
             LIMIT 50
         """)
@@ -1178,25 +1176,25 @@ def get_leaderboard(period: str = "weekly", user_id: Optional[int] = None):
             cursor.execute("SELECT id, coins, xp FROM users WHERE id = ?", (user_id,))
             u_self = cursor.fetchone()
             if u_self:
+                user_coins = u_self["coins"] or 0
                 if period == "weekly":
                     cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM coin_transactions WHERE user_id = ? AND created_at >= datetime('now', '-7 days')", (user_id,))
-                    my_wcoins = cursor.fetchone()[0] or 0
+                    my_wcoins = max(cursor.fetchone()[0] or 0, user_coins)
                     cursor.execute("""
                         SELECT COUNT(*) + 1 FROM (
-                            SELECT u.id, COALESCE(SUM(ct.amount), 0) as w
+                            SELECT u.id, MAX(COALESCE((SELECT SUM(amount) FROM coin_transactions WHERE user_id = u.id AND created_at >= datetime('now', '-7 days')), 0), u.coins) as w
                             FROM users u
-                            LEFT JOIN coin_transactions ct ON ct.user_id = u.id AND ct.created_at >= datetime('now', '-7 days')
-                            WHERE u.role = 'student'
+                            WHERE u.role IN ('student', 'admin')
                             GROUP BY u.id
                             HAVING w > ?
                         )
                     """, (my_wcoins,))
                     my_rank = cursor.fetchone()[0] or 1
-                    user_rank = {"rank": my_rank, "coins": my_wcoins, "weekly_coins": my_wcoins, "total_coins": u_self["coins"]}
+                    user_rank = {"rank": my_rank, "coins": my_wcoins, "weekly_coins": my_wcoins, "total_coins": user_coins}
                 else:
-                    cursor.execute("SELECT COUNT(*) + 1 FROM users WHERE role = 'student' AND coins > ?", (u_self["coins"],))
+                    cursor.execute("SELECT COUNT(*) + 1 FROM users WHERE role IN ('student', 'admin') AND coins > ?", (user_coins,))
                     my_rank = cursor.fetchone()[0] or 1
-                    user_rank = {"rank": my_rank, "coins": u_self["coins"], "weekly_coins": 0, "total_coins": u_self["coins"]}
+                    user_rank = {"rank": my_rank, "coins": user_coins, "weekly_coins": user_coins, "total_coins": user_coins}
 
     conn.close()
     return {
@@ -3117,6 +3115,15 @@ async def finish_game(room: BattleRoom):
             winner["id"] if winner else None,
             json.dumps(standings, ensure_ascii=False)
         ))
+        if winner and winner.get("id") and not winner.get("is_bot"):
+            w_id = winner["id"]
+            w_pro = bool(winner.get("is_pro", False))
+            coins_reward = 100 if w_pro else 50
+            cursor.execute("UPDATE users SET coins = coins + ? WHERE id = ?", (coins_reward, w_id))
+            cursor.execute("""
+                INSERT INTO coin_transactions (user_id, amount, reason, created_at)
+                VALUES (?, ?, 'PvP Batl G''alabasi', datetime('now'))
+            """, (w_id, coins_reward))
         conn.commit()
         conn.close()
     except Exception as e:

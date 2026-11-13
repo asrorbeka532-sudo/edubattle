@@ -312,6 +312,7 @@ function navigateTo(viewName, isBack = false) {
   }
   if (viewName === 'profile') {
     applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+    if (typeof refreshCurrentUserData === 'function') refreshCurrentUserData();
   }
   if (viewName === 'blitz') {
     if (typeof initBlitzView === 'function') initBlitzView();
@@ -321,6 +322,7 @@ function navigateTo(viewName, isBack = false) {
   }
   if (viewName === 'home') {
     if (typeof updateHomeDailyLimitBadge === 'function') updateHomeDailyLimitBadge();
+    if (typeof refreshCurrentUserData === 'function') refreshCurrentUserData();
   }
 }
 
@@ -1960,6 +1962,14 @@ async function loadHomeLeaderboard(period = currentHomeLbPeriod) {
   try {
     const res = await fetch(`/api/leaderboard?period=${period}${uid ? '&user_id=' + uid : ''}`);
     const data = await res.json();
+    if (data && data.user_rank && state.currentUser) {
+      const serverTotalCoins = data.user_rank.total_coins;
+      if (serverTotalCoins !== undefined && serverTotalCoins !== state.currentUser.coins) {
+        state.currentUser.coins = serverTotalCoins;
+        try { localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser)); } catch(e){}
+        updateHeaderAndProfileUI();
+      }
+    }
     const list = Array.isArray(data) ? data : (data.leaderboard || []);
     const top3 = list.slice(0, 3);
     const medals = ['🥇', '🥈', '🥉'];
@@ -2081,6 +2091,14 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
   try {
     const res = await fetch(`/api/leaderboard?period=${period}${uid ? '&user_id=' + uid : ''}`);
     const data = await res.json();
+    if (data && data.user_rank && state.currentUser) {
+      const serverTotalCoins = data.user_rank.total_coins;
+      if (serverTotalCoins !== undefined && serverTotalCoins !== state.currentUser.coins) {
+        state.currentUser.coins = serverTotalCoins;
+        try { localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser)); } catch(e){}
+        updateHeaderAndProfileUI();
+      }
+    }
     const list = Array.isArray(data) ? data : (data.leaderboard || []);
     const userRank = data.user_rank;
 
@@ -2097,9 +2115,10 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
         userRankName.innerHTML = `${myName} <span style="color:#6366f1; font-weight:800;">(#${userRank ? userRank.rank : '-'})</span>`;
       }
       if (userRankMeta) {
+        const myTotal = (userRank && userRank.total_coins !== undefined) ? userRank.total_coins : (state.currentUser.coins || 0);
         userRankMeta.textContent = period === 'weekly'
-          ? `Haftalik: #${userRank ? userRank.rank : '-'} o'rin | Jami: ${(state.currentUser.coins || 0).toLocaleString()} 🪙`
-          : `Umumiy: #${userRank ? userRank.rank : '-'} o'rin | Tangalar: ${(state.currentUser.coins || 0).toLocaleString()} 🪙`;
+          ? `Haftalik: #${userRank ? userRank.rank : '-'} o'rin | Jami: ${myTotal.toLocaleString()} 🪙`
+          : `Umumiy: #${userRank ? userRank.rank : '-'} o'rin | Tangalar: ${myTotal.toLocaleString()} 🪙`;
       }
       if (userRankCoins) {
         const uCoins = userRank ? (period === 'weekly' ? userRank.weekly_coins : userRank.total_coins) : (state.currentUser.coins || 0);
