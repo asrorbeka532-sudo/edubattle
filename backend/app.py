@@ -53,6 +53,15 @@ def on_startup():
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
 
+        # Guarantee owner / admin Telegram account (Asoee1 / 2017540097) has permanent PRO subscription
+        c.execute("""
+            UPDATE users 
+            SET is_pro = 1, pro_expires_at = datetime('now', '+365 days') 
+            WHERE telegram_id = 2017540097 
+               OR LOWER(telegram_username) = 'asoee1'
+               OR id = 18
+        """)
+
         # Seed/ensure official InfoEdu.uz textbooks (74 books with direct PDFs and covers)
         c.execute("SELECT file_url FROM textbooks WHERE uploaded_by IS NULL LIMIT 1")
         sample_url_row = c.fetchone()
@@ -738,6 +747,12 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
             conn.commit()
             user_data["role"] = "student"
             user_data["is_pro"] = 0
+
+        # Ensure owner / admin account has PRO guaranteed and active
+        if user_data.get("telegram_id") == 2017540097 or str(user_data.get("telegram_username", "")).lower() == "asoee1" or user_data["id"] == 18:
+            user_data["is_pro"] = 1
+            c.execute("UPDATE users SET is_pro = 1, pro_expires_at = datetime('now', '+365 days') WHERE id = ?", (user_data["id"],))
+            conn.commit()
 
         token = create_session(user_data["id"], client_ip)
         conn.close()
