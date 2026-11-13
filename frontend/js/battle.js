@@ -169,6 +169,14 @@ function connectToBattleWebSocket(roomCode) {
   ws.onerror = () => {
     alert("Batl serveriga ulanishda xatolik yuz berdi!");
   };
+
+  ws.onclose = () => {
+    const activeStage = document.getElementById('battleActiveStage');
+    if (activeStage && activeStage.style.display === 'block') {
+      alert("Server yangilandi yoki aloqa uzildi. Batl yakunlandi.");
+      resetBattleLobby();
+    }
+  };
 }
 
 function handleBattleMessage(msg) {
