@@ -2532,19 +2532,46 @@ def admin_delete_user(user_id: int, secret: Optional[str] = Query(None)):
         conn.close()
         raise HTTPException(status_code=400, detail="Administratorni o'chirib bo'lmaydi!")
 
-    # Cascade delete all related records
-    cursor.execute("DELETE FROM quiz_submissions WHERE student_id = ?", (user_id,))
-    cursor.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM battle_history WHERE winner_id = ?", (user_id,))
-    cursor.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
-    cursor.execute("DELETE FROM group_members WHERE student_id = ?", (user_id,))
-    cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
-    cursor.execute("DELETE FROM student_grades WHERE student_id = ?", (user_id,))
-    cursor.execute("DELETE FROM user_sessions WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    conn.commit()
+    try:
+        # 1. Quizzes created by user (as teacher) and their submissions
+        cursor.execute("SELECT id FROM teacher_quizzes WHERE teacher_id = ?", (user_id,))
+        t_quiz_ids = [r[0] for r in cursor.fetchall()]
+        for tqid in t_quiz_ids:
+            cursor.execute("DELETE FROM quiz_submissions WHERE quiz_id = ?", (tqid,))
+        cursor.execute("DELETE FROM teacher_quizzes WHERE teacher_id = ?", (user_id,))
+
+        # 2. Groups created by user and their members
+        cursor.execute("SELECT id FROM teacher_groups WHERE teacher_id = ?", (user_id,))
+        t_group_ids = [r[0] for r in cursor.fetchall()]
+        for tgid in t_group_ids:
+            cursor.execute("DELETE FROM group_members WHERE group_id = ?", (tgid,))
+        cursor.execute("DELETE FROM teacher_groups WHERE teacher_id = ?", (user_id,))
+
+        # 3. Student submissions & memberships
+        cursor.execute("DELETE FROM group_members WHERE student_id = ?", (user_id,))
+        cursor.execute("DELETE FROM quiz_submissions WHERE student_id = ?", (user_id,))
+        cursor.execute("DELETE FROM blitz_submissions WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM coin_transactions WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM battle_history WHERE winner_id = ?", (user_id,))
+        cursor.execute("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", (user_id, user_id))
+        cursor.execute("DELETE FROM subscriptions WHERE user_id = ? OR admin_id = ?", (user_id, user_id))
+        cursor.execute("DELETE FROM direct_messages WHERE sender_id = ? OR receiver_id = ?", (user_id, user_id))
+        cursor.execute("DELETE FROM student_grades WHERE student_id = ? OR teacher_id = ?", (user_id, user_id))
+        cursor.execute("DELETE FROM telegram_verifications WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM user_sessions WHERE user_id = ?", (user_id,))
+        
+        # 4. Nullify textbooks / questions created by user
+        cursor.execute("UPDATE textbooks SET uploaded_by = NULL WHERE uploaded_by = ?", (user_id,))
+        cursor.execute("UPDATE questions SET created_by = NULL WHERE created_by = ?", (user_id,))
+
+        # 5. Delete the user
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"O'chirishda xatolik yuz berdi: {str(e)}")
+
     conn.close()
     bump_data_revision()
     return {"success": True, "message": f"'{u['full_name']}' (@{u['username']}) muvaffaqiyatli o'chirildi!"}
