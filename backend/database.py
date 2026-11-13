@@ -2,7 +2,29 @@ import sqlite3
 import json
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "edubattle.db")
+def get_db_path():
+    data_dir = os.environ.get("DATA_DIR")
+    if data_dir:
+        os.makedirs(data_dir, exist_ok=True)
+        target = os.path.join(data_dir, "edubattle.db")
+        if not os.path.exists(target):
+            seed = os.path.join(os.path.dirname(__file__), "edubattle.db")
+            if os.path.exists(seed):
+                import shutil
+                try:
+                    shutil.copy2(seed, target)
+                    print(f"Initialized persistent database at {target} from bundled seed.")
+                except Exception as e:
+                    print(f"Error seeding persistent db: {e}")
+        return target
+    
+    custom_path = os.environ.get("SQLITE_PATH")
+    if custom_path:
+        return custom_path
+        
+    return os.path.join(os.path.dirname(__file__), "edubattle.db")
+
+DB_PATH = get_db_path()
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=10.0)

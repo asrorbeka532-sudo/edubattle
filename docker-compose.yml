@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  edubattle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edubattle_server
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - DATA_DIR=/data
+      - TELEGRAM_BOT_TOKEN=9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g
+      - RENDER_EXTERNAL_URL=https://edubattle-backend-x0v2.onrender.com
+    volumes:
+      - edubattle_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  edubattle_data:
+    name: edubattle_persistent_data
