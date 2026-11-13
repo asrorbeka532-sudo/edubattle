@@ -53,11 +53,17 @@ def on_startup():
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
 
-        # Seed/ensure 2020+ new generation textbooks
-        c.execute("SELECT COUNT(*) FROM textbooks WHERE uploaded_by IS NULL")
-        official_count = c.fetchone()[0]
+        # Seed/ensure official InfoEdu.uz textbooks (74 books with direct PDFs and covers)
+        c.execute("SELECT file_url FROM textbooks WHERE uploaded_by IS NULL LIMIT 1")
+        sample_url_row = c.fetchone()
+        needs_infoedu_seed = True
+        if sample_url_row and sample_url_row[0] and "api.infoedu.uz" in sample_url_row[0]:
+            c.execute("SELECT COUNT(*) FROM textbooks WHERE uploaded_by IS NULL")
+            if c.fetchone()[0] >= 70:
+                needs_infoedu_seed = False
+
         bundled_json_path = os.path.join(os.path.dirname(__file__), "bundled_textbooks.json")
-        if official_count < 50 and os.path.exists(bundled_json_path):
+        if needs_infoedu_seed and os.path.exists(bundled_json_path):
             try:
                 with open(bundled_json_path, "r", encoding="utf-8") as bf:
                     seed_books = json.load(bf)
@@ -65,12 +71,13 @@ def on_startup():
                 for sb in seed_books:
                     c.execute("""
                         INSERT INTO textbooks (id, subject_id, title, author, grade, cover_image, summary, chapters, uploaded_by, file_url)
-                        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, NULL, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
                     """, (
                         sb["id"], sb["subject_id"], sb["title"], sb["author"], sb["grade"],
-                        sb.get("summary", ""), json.dumps(sb.get("chapters", []), ensure_ascii=False),
+                        sb.get("cover_image"), sb.get("summary", ""), json.dumps(sb.get("chapters", []), ensure_ascii=False),
                         sb.get("file_url")
                     ))
+                print(f"Successfully seeded {len(seed_books)} InfoEdu.uz textbooks on startup.")
             except Exception as se:
                 print(f"Error seeding new textbooks: {se}")
 
