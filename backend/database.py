@@ -4,6 +4,9 @@ import os
 
 def get_db_path():
     data_dir = os.environ.get("DATA_DIR")
+    if not data_dir and os.path.exists("/data") and os.path.isdir("/data"):
+        data_dir = "/data"
+
     if data_dir:
         os.makedirs(data_dir, exist_ok=True)
         target = os.path.join(data_dir, "edubattle.db")
