@@ -217,6 +217,21 @@ def init_db():
     );
     """)
 
+    # Custom Quizzes (Foydalanuvchilar o'zlari tuzgan testlar va login-parollar)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS custom_quizzes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        subject_id INTEGER DEFAULT 1,
+        title TEXT NOT NULL,
+        login TEXT NOT NULL UNIQUE,
+        passcode TEXT NOT NULL,
+        questions_json TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    """)
+
     # Friendships table (Friends & Follow Requests)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS friendships (

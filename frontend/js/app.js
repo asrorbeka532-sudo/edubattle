@@ -324,6 +324,9 @@ function navigateTo(viewName, isBack = false) {
     if (typeof updateHomeDailyLimitBadge === 'function') updateHomeDailyLimitBadge();
     if (typeof refreshCurrentUserData === 'function') refreshCurrentUserData();
   }
+  if (viewName === 'my-quizzes' && typeof loadMyQuizzesList === 'function') {
+    loadMyQuizzesList();
+  }
 }
 
 function switchDeviceMode(mode) {
@@ -1964,10 +1967,12 @@ async function loadHomeLeaderboard(period = currentHomeLbPeriod) {
     const data = await res.json();
     if (data && data.user_rank && state.currentUser) {
       const serverTotalCoins = data.user_rank.total_coins;
-      if (serverTotalCoins !== undefined && serverTotalCoins !== state.currentUser.coins) {
+      if (serverTotalCoins !== undefined) {
         state.currentUser.coins = serverTotalCoins;
         try { localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser)); } catch(e){}
         updateHeaderAndProfileUI();
+        const hcEl = document.getElementById('homeCoinsText');
+        if (hcEl) hcEl.textContent = Number(serverTotalCoins || 0).toLocaleString();
       }
     }
     const list = Array.isArray(data) ? data : (data.leaderboard || []);
@@ -2093,10 +2098,12 @@ async function loadModalLeaderboard(period = currentModalLbPeriod) {
     const data = await res.json();
     if (data && data.user_rank && state.currentUser) {
       const serverTotalCoins = data.user_rank.total_coins;
-      if (serverTotalCoins !== undefined && serverTotalCoins !== state.currentUser.coins) {
+      if (serverTotalCoins !== undefined) {
         state.currentUser.coins = serverTotalCoins;
         try { localStorage.setItem('edubattle_user', JSON.stringify(state.currentUser)); } catch(e){}
         updateHeaderAndProfileUI();
+        const hcEl = document.getElementById('homeCoinsText');
+        if (hcEl) hcEl.textContent = Number(serverTotalCoins || 0).toLocaleString();
       }
     }
     const list = Array.isArray(data) ? data : (data.leaderboard || []);

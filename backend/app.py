@@ -267,7 +267,7 @@ def get_current_user_from_token(token: str) -> Optional[dict]:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT u.id, u.username, u.full_name, u.role, u.school_lyceum, u.grade, u.avatar, u.xp, u.grade_score, u.streak, u.is_pro, u.pro_expires_at
+        SELECT u.id, u.username, u.full_name, u.role, u.school_lyceum, u.grade, u.avatar, u.xp, u.coins, u.grade_score, u.streak, u.is_pro, u.pro_expires_at
         FROM user_sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.token = ? AND s.expires_at > datetime('now')
@@ -336,14 +336,16 @@ def generate_auto_login_sync() -> str:
 
 # ----------------- IN-MEMORY BATTLE ROOM MANAGER -----------------
 class BattleRoom:
-    def __init__(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int = 2, question_count: int = 5):
+    def __init__(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int = 2, question_count: int = 5, custom_questions: list = None, custom_quiz_title: str = None):
         self.room_code = room_code
-        self.mode = mode  # '1v1' or 'pro_3_5'
+        self.mode = mode  # '1v1', 'pro_3_5', or 'group'
         self.host_id = host_id
         self.host_name = host_name
         self.subject_id = subject_id
-        self.max_players = max_players  # 2 for free, 3 to 5 for pro
-        self.question_count = question_count if question_count in (5, 15, 30) else 5
+        self.max_players = max_players  # 2 for free, 3 to 5 for pro, 999 for group
+        self.custom_questions = custom_questions or []
+        self.custom_quiz_title = custom_quiz_title or ""
+        self.question_count = len(custom_questions) if custom_questions else (question_count if question_count in (5, 15, 30) else 5)
         self.players: Dict[str, dict] = {} # websocket_id -> player info
         self.sockets: Dict[str, WebSocket] = {}
         self.status = "waiting" # 'waiting', 'playing', 'finished'
@@ -360,8 +362,8 @@ class BattleManager:
     def __init__(self):
         self.rooms: Dict[str, BattleRoom] = {}
 
-    def create_room(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int, question_count: int = 5) -> BattleRoom:
-        room = BattleRoom(room_code, mode, host_id, host_name, subject_id, max_players, question_count)
+    def create_room(self, room_code: str, mode: str, host_id: int, host_name: str, subject_id: int, max_players: int, question_count: int = 5, custom_questions: list = None, custom_quiz_title: str = None) -> BattleRoom:
+        room = BattleRoom(room_code, mode, host_id, host_name, subject_id, max_players, question_count, custom_questions, custom_quiz_title)
         self.rooms[room_code] = room
         return room
 
@@ -1074,6 +1076,174 @@ def delete_subject_quiz(quiz_id: int):
     conn.commit()
     conn.close()
     return {"ok": True, "message": "Test o'chirildi"}
+
+# ----------------- MENING TESTLARIM (FOYDALANUVCHILARNING MAXSUS TESTLARI VA LOGIN-PAROLLARI) -----------------
+@app.get("/api/my-quizzes")
+def get_my_quizzes(user_id: int):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS custom_quizzes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            subject_id INTEGER DEFAULT 1,
+            title TEXT NOT NULL,
+            login TEXT NOT NULL UNIQUE,
+            passcode TEXT NOT NULL,
+            questions_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.commit()
+
+    cursor.execute("""
+        SELECT q.id, q.user_id, q.subject_id, q.title, q.login, q.passcode, q.created_at,
+               s.name as subject_name, s.icon as subject_icon, q.questions_json
+        FROM custom_quizzes q
+        LEFT JOIN subjects s ON q.subject_id = s.id
+        WHERE q.user_id = ?
+        ORDER BY q.id DESC
+    """, (user_id,))
+    rows = []
+    for r in cursor.fetchall():
+        item = dict(r)
+        try:
+            q_list = json.loads(item.get("questions_json") or "[]")
+            item["question_count"] = len(q_list)
+        except Exception:
+            item["question_count"] = 0
+        del item["questions_json"]
+        rows.append(item)
+    conn.close()
+    return rows
+
+@app.post("/api/my-quizzes/create")
+def create_my_quiz(payload: dict = Body(...)):
+    user_id = payload.get("user_id")
+    subject_id = payload.get("subject_id") or 1
+    title = (payload.get("title") or "").strip()
+    login = (payload.get("login") or "").strip().upper()
+    passcode = (payload.get("passcode") or "").strip()
+    questions = payload.get("questions") or []
+
+    if not user_id or not title:
+        raise HTTPException(status_code=400, detail="Foydalanuvchi va test nomi kiritilishi shart")
+    if not questions or not isinstance(questions, list) or len(questions) == 0:
+        raise HTTPException(status_code=400, detail="Kamida bitta test savoli kiritilishi shart")
+
+    if not login:
+        login = f"TEST-{random.randint(1000, 9999)}"
+    if not passcode:
+        passcode = f"{random.randint(1000, 9999)}"
+
+    cleaned = []
+    for q in questions:
+        q_text = (q.get("question_text") or q.get("text") or "").strip()
+        opts = q.get("options") or []
+        correct = int(q.get("correct_index", 0))
+        expl = (q.get("explanation") or "").strip()
+        if not q_text or len(opts) < 2:
+            continue
+        cleaned.append({
+            "question_text": q_text,
+            "options": opts,
+            "correct_index": correct,
+            "explanation": expl
+        })
+
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="Yaroqli test savollari topilmadi")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS custom_quizzes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            subject_id INTEGER DEFAULT 1,
+            title TEXT NOT NULL,
+            login TEXT NOT NULL UNIQUE,
+            passcode TEXT NOT NULL,
+            questions_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.commit()
+
+    # If login already taken by another quiz, auto-generate unique
+    cursor.execute("SELECT id FROM custom_quizzes WHERE UPPER(login) = ?", (login,))
+    if cursor.fetchone():
+        login = f"TEST-{random.randint(1000, 9999)}"
+
+    cursor.execute("""
+        INSERT INTO custom_quizzes (user_id, subject_id, title, login, passcode, questions_json)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (user_id, subject_id, title, login, passcode, json.dumps(cleaned, ensure_ascii=False)))
+    quiz_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return {
+        "ok": True,
+        "quiz_id": quiz_id,
+        "login": login,
+        "passcode": passcode,
+        "question_count": len(cleaned),
+        "message": "Test to'plami muvaffaqiyatli saqlandi!"
+    }
+
+@app.delete("/api/my-quizzes/{quiz_id}")
+def delete_my_quiz(quiz_id: int, user_id: int = Query(...)):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM custom_quizzes WHERE id = ? AND user_id = ?", (quiz_id, user_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Test to'plami o'chirildi"}
+
+@app.post("/api/custom-quiz/verify")
+def verify_custom_quiz(payload: dict = Body(...)):
+    login = (payload.get("login") or "").strip().upper()
+    passcode = (payload.get("passcode") or "").strip()
+
+    if not login or not passcode:
+        raise HTTPException(status_code=400, detail="Test login va paroli talab qilinadi")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT q.id, q.title, q.subject_id, q.login, q.passcode, q.questions_json, s.name as subject_name
+        FROM custom_quizzes q
+        LEFT JOIN subjects s ON q.subject_id = s.id
+        WHERE UPPER(q.login) = ?
+    """, (login,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Bunday loginli test to'plami topilmadi!")
+
+    if row["passcode"] != passcode:
+        raise HTTPException(status_code=400, detail="Test paroli noto'g'ri!")
+
+    try:
+        questions = json.loads(row["questions_json"])
+    except:
+        questions = []
+
+    return {
+        "ok": True,
+        "quiz": {
+            "id": row["id"],
+            "title": row["title"],
+            "subject_name": row["subject_name"] or "Umumiy",
+            "login": row["login"],
+            "question_count": len(questions),
+            "questions": questions
+        }
+    }
 
 
 
@@ -2773,23 +2943,7 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
                 conn.close()
                 is_pro = bool(p_row["is_pro"]) if p_row else False
 
-                # 15 and 30 questions battle requires PRO for BOTH sides!
-                if getattr(room, "question_count", 5) in (15, 30) and not is_pro:
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": f"Ushbu batl {room.question_count} talik testlardan iborat. Unda qatnashish uchun har ikki tomon ham PRO obunaga ega bo'lishi kerak!"
-                    })
-                    await websocket.close()
-                    return
-
-                # If room mode is 'pro_3_5', require joining user to also be PRO
-                if room.mode == "pro_3_5" and not is_pro:
-                    await websocket.send_json({
-                        "type": "error",
-                        "message": "3-5 kishilik guruhli batllarda qatnashish uchun PRO obuna talab qilinadi!"
-                    })
-                    await websocket.close()
-                    return
+                # Host status controls room creation. All invited players can join!
 
                 room.players[player_key] = {
                     "key": player_key,
@@ -2825,44 +2979,47 @@ async def battle_websocket(websocket: WebSocket, room_code: str):
                     await broadcast_room_state(room)
 
             elif action == "start":
-                # Fetch questions for this battle (5, 15, or 30 questions)
-                limit_cnt = getattr(room, "question_count", 5)
-                if limit_cnt not in (5, 15, 30):
-                    limit_cnt = 5
+                if getattr(room, "custom_questions", None) and len(room.custom_questions) > 0:
+                    questions = list(room.custom_questions)
+                else:
+                    # Fetch questions for this battle (5, 15, or 30 questions)
+                    limit_cnt = getattr(room, "question_count", 5)
+                    if limit_cnt not in (5, 15, 30):
+                        limit_cnt = 5
 
-                conn = get_db()
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT id, question_text, options, correct_index, explanation, difficulty 
-                    FROM questions 
-                    WHERE subject_id = ? 
-                    ORDER BY RANDOM() LIMIT ?
-                """, (room.subject_id, limit_cnt))
-                q_rows = list(cursor.fetchall())
-
-                # If subject has fewer questions than requested, top up with other subjects
-                if len(q_rows) < limit_cnt:
-                    needed = limit_cnt - len(q_rows)
-                    existing_ids = [r["id"] for r in q_rows] or [-1]
-                    placeholders = ",".join("?" for _ in existing_ids)
-                    cursor.execute(f"""
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute("""
                         SELECT id, question_text, options, correct_index, explanation, difficulty 
                         FROM questions 
-                        WHERE id NOT IN ({placeholders})
+                        WHERE subject_id = ? 
                         ORDER BY RANDOM() LIMIT ?
-                    """, (*existing_ids, needed))
-                    more_rows = cursor.fetchall()
-                    q_rows.extend(more_rows)
-                conn.close()
+                    """, (room.subject_id, limit_cnt))
+                    q_rows = list(cursor.fetchall())
 
-                questions = []
-                for q in q_rows:
-                    item = dict(q)
-                    try:
-                        item["options"] = json.loads(item["options"])
-                    except:
-                        item["options"] = []
-                    questions.append(item)
+                    # If subject has fewer questions than requested, top up with other subjects
+                    if len(q_rows) < limit_cnt:
+                        needed = limit_cnt - len(q_rows)
+                        existing_ids = [r["id"] for r in q_rows] or [-1]
+                        placeholders = ",".join("?" for _ in existing_ids)
+                        cursor.execute(f"""
+                            SELECT id, question_text, options, correct_index, explanation, difficulty 
+                            FROM questions 
+                            WHERE id NOT IN ({placeholders})
+                            ORDER BY RANDOM() LIMIT ?
+                        """, (*existing_ids, needed))
+                        more_rows = cursor.fetchall()
+                        q_rows.extend(more_rows)
+                    conn.close()
+
+                    questions = []
+                    for q in q_rows:
+                        item = dict(q)
+                        try:
+                            item["options"] = json.loads(item["options"])
+                        except:
+                            item["options"] = []
+                        questions.append(item)
 
                 if not questions:
                     for ws in list(room.sockets.values()):
@@ -2990,6 +3147,7 @@ async def broadcast_room_state(room: BattleRoom):
         "max_players": room.max_players,
         "question_count": getattr(room, "question_count", 5),
         "status": room.status,
+        "custom_quiz_title": getattr(room, "custom_quiz_title", ""),
         "player_count": len(players_list),
         "players": players_list,
         "can_start": len(players_list) >= 2
@@ -3146,7 +3304,7 @@ def create_battle_room(payload: dict = Body(...)):
     host_id = payload.get("host_id", 1)
     host_name = payload.get("host_name", "O'yinchi")
     subject_id = payload.get("subject_id", 1)
-    mode = payload.get("mode", "1v1") # '1v1' or 'pro_3_5'
+    mode = payload.get("mode", "1v1") # '1v1', 'pro_3_5', or 'group'
     requested_max = int(payload.get("max_players", 2))
     question_count = int(payload.get("question_count", 5))
     if question_count not in (5, 15, 30):
@@ -3160,12 +3318,39 @@ def create_battle_room(payload: dict = Body(...)):
     conn.close()
     host_is_pro = bool(u_row["is_pro"]) if u_row else False
 
+    # Check custom quiz login & passcode if provided
+    custom_quiz_login = (payload.get("custom_quiz_login") or "").strip()
+    custom_quiz_passcode = (payload.get("custom_quiz_passcode") or "").strip()
+    custom_questions = None
+    custom_quiz_title = None
+
+    if custom_quiz_login:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("SELECT id, title, questions_json, passcode FROM custom_quizzes WHERE UPPER(login) = UPPER(?)", (custom_quiz_login,))
+        cq = c.fetchone()
+        conn.close()
+        if not cq:
+            raise HTTPException(status_code=404, detail="Bunday loginli maxsus test topilmadi!")
+        if cq["passcode"] and cq["passcode"] != custom_quiz_passcode:
+            raise HTTPException(status_code=400, detail="Test paroli noto'g'ri!")
+        try:
+            custom_questions = json.loads(cq["questions_json"])
+            custom_quiz_title = cq["title"]
+            question_count = len(custom_questions)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Maxsus test savollarini yuklab bo'lmadi")
+
     # 15 and 30 questions require PRO subscription
-    if question_count in (15, 30) and not host_is_pro:
+    if question_count in (15, 30) and not host_is_pro and not custom_questions:
         raise HTTPException(status_code=403, detail="15 va 30 talik testlar bilan batl o'ynash uchun PRO obuna talab qilinadi!")
 
-    # Free users can do 2 players. PRO users can select 3, 4, or 5 players!
-    if mode == "pro_3_5":
+    # Free users can do 2 players. PRO users can select 3, 4, 5 players OR unlimited group battle!
+    if mode == "group":
+        if not host_is_pro:
+            raise HTTPException(status_code=403, detail="Cheksiz ishtirokchili Guruh Batlini faqat PRO obunachilar ocha oladi!")
+        max_players = 999
+    elif mode == "pro_3_5":
         if not host_is_pro:
             raise HTTPException(status_code=403, detail="3-5 kishilik guruhli batllar uchun PRO obuna talab qilinadi!")
         max_players = min(max(requested_max, 3), 5)
@@ -3174,14 +3359,18 @@ def create_battle_room(payload: dict = Body(...)):
 
     # Generate 6-digit room code
     room_code = f"BATL{random.randint(1000, 9999)}"
-    battle_manager.create_room(room_code, mode, host_id, host_name, subject_id, max_players, question_count)
+    battle_manager.create_room(
+        room_code, mode, host_id, host_name, subject_id, max_players, question_count,
+        custom_questions=custom_questions, custom_quiz_title=custom_quiz_title
+    )
 
     return {
         "success": True,
         "room_code": room_code,
         "mode": mode,
         "max_players": max_players,
-        "question_count": question_count
+        "question_count": question_count,
+        "custom_quiz_title": custom_quiz_title
     }
 
 # ----------------- STATIC FILES & FRONTEND -----------------

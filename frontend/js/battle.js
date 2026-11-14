@@ -28,7 +28,7 @@ function selectBattleQuestionCount(count) {
   if (targetCount === 15 || targetCount === 30) {
     if (!state.currentUser || !state.currentUser.is_pro) {
       const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
-      if (confirm(`⚡ ${targetCount} talik batllar uchun har ikki tomon ham PRO obunaga ega bo'lishi kerak! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
+      if (confirm(`⚡ ${targetCount} talik batl xonasini ochish uchun PRO obuna talab qilinadi! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
         openPaymentModal('student_pro');
       }
       return;
@@ -53,28 +53,44 @@ function selectBattleMode(mode) {
   playSound('click');
   const card1v1 = document.getElementById('mode1v1Card');
   const cardPro = document.getElementById('modeProCard');
+  const cardGroup = document.getElementById('modeGroupCard');
   const proSlider = document.getElementById('proPlayerCountBox');
 
-  if (mode === 'pro_3_5') {
+  if (card1v1) card1v1.classList.remove('selected');
+  if (cardPro) cardPro.classList.remove('selected');
+  if (cardGroup) cardGroup.classList.remove('selected');
+
+  if (mode === 'group') {
     // Check if user is PRO
     if (!state.currentUser || !state.currentUser.is_pro) {
-      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "";
+      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
+      if (confirm(`⚡ Cheksiz ishtirokchili Guruh Batli faqat PRO obunachilar uchun! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
+        openPaymentModal('student_pro');
+      }
+      return;
+    }
+    battleState.mode = 'group';
+    battleState.maxPlayers = 999;
+    if (cardGroup) cardGroup.classList.add('selected');
+    if (proSlider) proSlider.style.display = 'none';
+  } else if (mode === 'pro_3_5') {
+    // Check if user is PRO
+    if (!state.currentUser || !state.currentUser.is_pro) {
+      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
       if (confirm(`⚡ 3-5 kishilik batllar faqat PRO obunachilar uchun! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
         openPaymentModal('student_pro');
       }
       return;
     }
     battleState.mode = 'pro_3_5';
-    battleState.maxPlayers = parseInt(document.getElementById('proPlayerRange').value) || 4;
-    card1v1.classList.remove('selected');
-    cardPro.classList.add('selected');
-    proSlider.style.display = 'block';
+    battleState.maxPlayers = parseInt(document.getElementById('proPlayerRange')?.value) || 4;
+    if (cardPro) cardPro.classList.add('selected');
+    if (proSlider) proSlider.style.display = 'block';
   } else {
     battleState.mode = '1v1';
     battleState.maxPlayers = 2;
-    cardPro.classList.remove('selected');
-    card1v1.classList.add('selected');
-    proSlider.style.display = 'none';
+    if (card1v1) card1v1.classList.add('selected');
+    if (proSlider) proSlider.style.display = 'none';
   }
 }
 
@@ -95,18 +111,24 @@ async function createBattleRoom() {
 
   const subjectId = parseInt(document.getElementById('battleSubjectSelect').value) || 1;
 
+  const payload = {
+    host_id: user.id,
+    host_name: user.full_name,
+    subject_id: subjectId,
+    mode: battleState.mode,
+    max_players: battleState.maxPlayers,
+    question_count: battleState.questionCount || 5
+  };
+  if (battleState.customQuiz) {
+    payload.custom_quiz_login = battleState.customQuiz.login;
+    payload.custom_quiz_passcode = battleState.customQuiz.passcode;
+  }
+
   try {
     const res = await fetch('/api/battle/create-room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        host_id: user.id,
-        host_name: user.full_name,
-        subject_id: subjectId,
-        mode: battleState.mode,
-        max_players: battleState.maxPlayers,
-        question_count: battleState.questionCount || 5
-      })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if (data.success) {
@@ -218,14 +240,24 @@ function renderWaitingRoom(data) {
 
   document.getElementById('waitingRoomCode').textContent = data.room_code;
   const qCount = data.question_count || battleState.questionCount || 5;
-  document.getElementById('waitingRoomBadge').textContent = data.mode === 'pro_3_5' 
-    ? `PRO BATL (${data.max_players} KISHILIK • ${qCount} TA TEST)` 
-    : `1v1 DUEL (${qCount} TA TEST)`;
+
+  let badgeText = `1v1 DUEL (${qCount} TA TEST)`;
+  if (data.custom_quiz_title) {
+    badgeText = `📝 MAXSUS TEST BATLI (${data.custom_quiz_title.toUpperCase()} • ${qCount} TA)`;
+  } else if (data.mode === 'group') {
+    badgeText = `🚀 GURUH BATLI (CHEKSIZ • ${qCount} TA TEST)`;
+  } else if (data.mode === 'pro_3_5') {
+    badgeText = `👥 PRO BATL (${data.max_players} KISHILIK • ${qCount} TA TEST)`;
+  }
+  document.getElementById('waitingRoomBadge').textContent = badgeText;
 
   const arena = document.getElementById('waitingPlayersArena');
   arena.innerHTML = '';
 
-  for (let i = 0; i < data.max_players; i++) {
+  const isGroup = (data.mode === 'group');
+  const displaySlots = isGroup ? Math.max(data.players.length + 1, 4) : data.max_players;
+
+  for (let i = 0; i < displaySlots; i++) {
     const player = data.players[i];
     const slot = document.createElement('div');
     slot.className = 'player-slot-clean';
@@ -239,13 +271,21 @@ function renderWaitingRoom(data) {
         <div style="font-size:11px; font-weight:700; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${player.name}</div>
         <div style="font-size:10px; color:var(--accent-green); font-weight:600;">Tayyor</div>
       `;
+      arena.appendChild(slot);
+    } else if (isGroup) {
+      slot.innerHTML = `
+        <div class="player-slot-avatar" style="border-style:dashed; color:var(--text-muted); font-size:14px;">👥+</div>
+        <div style="font-size:10px; color:var(--text-muted);">Qo'shilish...</div>
+      `;
+      arena.appendChild(slot);
+      break; // Only show one invite slot in group mode!
     } else {
       slot.innerHTML = `
         <div class="player-slot-avatar" style="border-style:dashed; color:var(--text-muted);">+</div>
         <div style="font-size:10px; color:var(--text-muted);">Kutilmoqda</div>
       `;
+      arena.appendChild(slot);
     }
-    arena.appendChild(slot);
   }
 
   const startBtn = document.getElementById('startBattleBtn');
@@ -613,6 +653,7 @@ function cancelBattleGame() {
 }
 
 function resetBattleLobby() {
+  battleState.customQuiz = null;
   if (battleState.timerInterval) {
     clearInterval(battleState.timerInterval);
     battleState.timerInterval = null;

@@ -473,19 +473,26 @@
             </p>
 
             <!-- Mode Selector -->
-            <div class="battle-modes-row">
+            <div class="battle-modes-row" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
               <div class="battle-mode-choice selected" id="mode1v1Card" onclick="selectBattleMode('1v1')">
                 <div style="font-size:20px; margin-bottom:4px;">🤺</div>
-                <div style="font-size:13px; font-weight:800;">1v1 Duel</div>
-                <div style="font-size:10px; color:var(--text-muted);">2 ta o'yinchi</div>
-                <span class="tag tag-subtle" style="margin-top:6px;">BEPUL</span>
+                <div style="font-size:12px; font-weight:800;">1v1 Duel</div>
+                <div style="font-size:10px; color:var(--text-muted);">2 o'yinchi</div>
+                <span class="tag tag-subtle" style="margin-top:6px; font-size:9px;">BEPUL</span>
               </div>
 
               <div class="battle-mode-choice" id="modeProCard" onclick="selectBattleMode('pro_3_5')">
                 <div style="font-size:20px; margin-bottom:4px;">👥</div>
-                <div style="font-size:13px; font-weight:800;">3-5 Kishilik Batl</div>
+                <div style="font-size:12px; font-weight:800;">3-5 Kishilik</div>
                 <div style="font-size:10px; color:var(--text-muted);">Guruhli jang</div>
-                <span class="tag tag-red" style="margin-top:6px;">PRO (<span class="dynamic-pro-price">29 000 so'm</span>)</span>
+                <span class="tag tag-red" style="margin-top:6px; font-size:9px;">PRO 💎</span>
+              </div>
+
+              <div class="battle-mode-choice" id="modeGroupCard" onclick="selectBattleMode('group')">
+                <div style="font-size:20px; margin-bottom:4px;">🚀</div>
+                <div style="font-size:12px; font-weight:800;">Guruh Batli</div>
+                <div style="font-size:10px; color:var(--text-muted);">Cheksiz jang</div>
+                <span class="tag tag-red" style="margin-top:6px; font-size:9px;">PRO 💎</span>
               </div>
             </div>
 
@@ -526,10 +533,13 @@
               <input type="range" id="proPlayerRange" min="3" max="5" value="4" oninput="updateProPlayerCount(this.value)" style="width:100%; accent-color:var(--accent-red);">
             </div>
 
-            <div style="display:flex; gap:8px; margin-top:12px;">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:12px;">
               <button class="btn btn-red" onclick="createBattleRoom()">⚡ Xona Ochish</button>
-              <button class="btn btn-outline" onclick="promptJoinRoom()">🔑 Batl Kodi</button>
-              <button class="btn btn-green" onclick="promptQuizAccess()">🤖 Ustoz Testi</button>
+              <button class="btn btn-outline" onclick="promptJoinRoom()">🔑 Batl Kodi Bilan Kirish</button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:8px;">
+              <button class="btn btn-purple" onclick="navigateTo('my-quizzes')">📝 Mening Testlarim</button>
+              <button class="btn btn-gold" onclick="promptCustomQuizBattle()">🔑 Test Kodi Bilan Batl</button>
             </div>
           </div>
 
@@ -627,6 +637,22 @@
             </div>
           </div>
 
+        </section>
+
+        <!-- ================= VIEW: MENING TESTLARIM (FOYDALANUVCHILAR MAXSUS TESTLARI) ================= -->
+        <section id="view-my-quizzes" class="view-section">
+          <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>📝 Mening Testlarim</span>
+            <button class="btn btn-red btn-sm" onclick="openCreateMyQuizModal()">➕ Yangi Test Tuzish</button>
+          </div>
+          <p class="section-subtext">
+            O'zingiz mustaqil test to'plamini tuzing, unga maxsus <b>Login</b> va <b>Parol</b> o'rnating. Do'stlaringiz ushbu login-parol orqali Batl bo'limida bellashishlari mumkin!
+          </p>
+
+          <!-- List of created quizzes -->
+          <div id="myQuizzesListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+            <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:12px;">Yuklanmoqda...</div>
+          </div>
         </section>
 
         <!-- ================= VIEW 4: O'QITUVCHI KABINETI (Faqat O'qituvchilar Uchun) ================= -->
@@ -793,6 +819,18 @@
                 <div style="font-size:11px; color:var(--text-muted);">Ketma-ketlik</div>
               </div>
             </div>
+          </div>
+
+          <!-- Mening testlarim bo'limiga o'tish tugmasi -->
+          <div onclick="navigateTo('my-quizzes')" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding:12px 14px; background:linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12)); border:1px solid rgba(168,85,247,0.35); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="font-size:24px;">📝</div>
+              <div>
+                <div style="font-size:13px; font-weight:800; color:var(--text-primary);">Mening Testlarim</div>
+                <div style="font-size:10px; color:var(--text-muted);">Mustaqil test tuzish, login-parol olish va do'stlar bilan batl qilish</div>
+              </div>
+            </div>
+            <div style="font-size:14px; color:#a855f7; font-weight:800;">➜</div>
           </div>
 
           <!-- PRO Membership Banner (Faqat O'quvchilar Uchun: 29 000 so'm) -->
@@ -1995,10 +2033,88 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: YANGI TEST TUZISH (CREATE MY QUIZ) ================= -->
+  <div class="modal-overlay" id="createMyQuizModal" style="display:none;">
+    <div class="modal-content" style="max-width:480px; max-height:90vh; overflow-y:auto; padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size:16px; font-weight:800; color:var(--text-primary); margin:0;">📝 Yangi Test To'plami Tuzish</h3>
+        <button class="modal-close-btn" onclick="closeCreateMyQuizModal()">✕</button>
+      </div>
+
+      <div class="minimal-card" style="margin-bottom:12px; padding:12px;">
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Fan:</label>
+        <select id="myQuizSubjectSelect" class="input-field" style="margin-bottom:8px;"></select>
+
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Test / Mavzu nomi:</label>
+        <input type="text" id="myQuizTitleInput" class="input-field" placeholder="Masalan: 9-sinf Fizika optika qonunlari" style="margin-bottom:8px;">
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔑 Test Logini:</label>
+            <input type="text" id="myQuizLoginInput" class="input-field" placeholder="TEST-4821" style="font-family:monospace; text-transform:uppercase; margin-bottom:0; font-weight:800; color:#a855f7;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">🔒 Test Paroli:</label>
+            <input type="text" id="myQuizPasscodeInput" class="input-field" placeholder="1234" style="font-family:monospace; margin-bottom:0; font-weight:800; color:#10b981;">
+          </div>
+        </div>
+        <p style="font-size:10px; color:var(--text-muted); margin-top:6px; margin-bottom:0;">
+          Ushbu login va parolni do'stlaringizga bersangiz, ular Batl bo'limida kiritib siz tuzgan testlar asosida bellashadilar.
+        </p>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; font-weight:800; color:var(--text-primary);">Test Savollari</span>
+        <button type="button" class="btn btn-outline btn-sm" onclick="addMyQuizQuestionField()" style="font-size:11px; padding:3px 8px;">
+          ➕ Savol Qo'shish
+        </button>
+      </div>
+
+      <div id="myQuizQuestionsBuilder" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;"></div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-red btn-block" onclick="saveMyQuiz()">💾 Test To'plamini Saqlash</button>
+        <button class="btn btn-outline" onclick="closeCreateMyQuizModal()">Bekor qilish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MAXSUS TEST BILAN BATL (LOGIN & PASSCODE) ================= -->
+  <div class="modal-overlay" id="customQuizBattleModal" style="display:none;">
+    <div class="modal-content" style="max-width:380px; padding:20px; text-align:center;">
+      <div style="font-size:32px; margin-bottom:6px;">🔑</div>
+      <h3 style="font-size:16px; font-weight:800; color:var(--text-primary); margin-bottom:6px;">Maxsus Test Kodi Bilan Batl</h3>
+      <p style="font-size:11px; color:var(--text-muted); margin-bottom:14px;">
+        Do'stingiz yoki ustozingiz tuzgan test to'plamining <b>Login</b> va <b>Parol</b>ini kiriting:
+      </p>
+
+      <div style="margin-bottom:12px; text-align:left;">
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Test Logini (Masalan: TEST-4821):</label>
+        <input type="text" id="cqbLoginInput" class="input-field" placeholder="TEST-XXXX" style="text-transform:uppercase; font-family:monospace; font-weight:800; letter-spacing:1px; margin-bottom:8px;">
+
+        <label style="font-size:11px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Test Paroli:</label>
+        <input type="text" id="cqbPasscodeInput" class="input-field" placeholder="Parol (Masalan: 1234)" style="font-family:monospace; margin-bottom:0;">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-purple btn-block" onclick="startCustomQuizBattleFromModal('battle')">
+          ⚔️ Batl Xonasini Ochish ➜
+        </button>
+        <button class="btn btn-outline btn-block" onclick="startCustomQuizBattleFromModal('practice')">
+          🎯 Solo Mashq Qilish
+        </button>
+        <button class="btn btn-subtle btn-block" onclick="closeCustomQuizBattleModal()" style="font-size:11px;">
+          Yopish
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts with cache buster -->
   <script src="/js/i18n.js?v=20261112_1025"></script>
   <script src="/js/app.js?v=20261112_1025"></script>
   <script src="/js/battle.js?v=20261112_1025"></script>
+  <script src="/js/my_quizzes.js?v=20261114_1050"></script>
   <script src="/js/teacher.js?v=20261112_1025"></script>
   <script src="/js/admin.js?v=20261112_1025"></script>
 
