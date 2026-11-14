@@ -438,12 +438,28 @@ def init_db():
     except Exception as e:
         print(f"Question shuffle check: {e}")
 
-    # Reset all coins, xp, and student grades as requested
+    # Sync 10,000+ curriculum questions to persistent storage if count < 9000
     try:
-        cursor.execute("UPDATE users SET coins = 0, xp = 0, grade_score = 0 WHERE coins != 0 OR xp != 0 OR grade_score != 0;")
-        cursor.execute("DELETE FROM student_grades;")
+        cursor.execute("SELECT COUNT(*) FROM questions")
+        cur_q_cnt = cursor.fetchone()[0]
+        if cur_q_cnt < 9000:
+            seed_db_path = os.path.join(os.path.dirname(__file__), "edubattle.db")
+            if os.path.exists(seed_db_path) and os.path.abspath(seed_db_path) != os.path.abspath(DB_PATH):
+                print(f"Syncing 10,000+ questions from {seed_db_path} to {DB_PATH}...")
+                s_conn = sqlite3.connect(seed_db_path)
+                s_conn.row_factory = sqlite3.Row
+                s_cur = s_conn.cursor()
+                s_cur.execute("SELECT subject_id, chapter_title, question_text, options, correct_index, explanation, difficulty, grade FROM questions")
+                rows = s_cur.fetchall()
+                s_conn.close()
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO questions (subject_id, chapter_title, question_text, options, correct_index, explanation, difficulty, grade)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, [tuple(r) for r in rows])
+                conn.commit()
+                print(f"Synced questions successfully. Rows processed: {len(rows)}")
     except Exception as e:
-        print(f"Reset migration notice: {e}")
+        print(f"Questions sync notice: {e}")
 
     conn.commit()
     conn.close()
