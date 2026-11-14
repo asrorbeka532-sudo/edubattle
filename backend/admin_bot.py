@@ -397,10 +397,10 @@ def is_free_pro_mode_active() -> bool:
         row = c.fetchone()
         conn.close()
         if row and row["value"] is not None:
-            return row["value"] == "1"
+            return str(row["value"]).strip() == "1"
     except Exception as e:
         logger.error(f"Error getting free pro mode: {e}")
-    return True
+    return False
 
 def set_free_pro_mode(active: bool) -> bool:
     val = "1" if active else "0"
@@ -464,7 +464,7 @@ def send_dashboard(chat_id: int):
         formatted_price = f"{curr_price:,}".replace(",", " ")
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         free_pro = is_free_pro_mode_active()
-        free_pro_str = "🟢 HAMMAGA 100% BEPUL (Aksiya Faol)" if free_pro else "🔒 Pullik tartibda"
+        free_pro_str = "🟢 HAMMAGA 100% BEPUL (Aksiya Faol)" if free_pro else "🎁 Har bir yangi a'zoga 1-oy bepul"
 
         recent_str = ""
         for u in recent_users:
@@ -502,7 +502,7 @@ def send_dashboard(chat_id: int):
             "inline_keyboard": [
                 [{"text": "🔄 Yangilash (Real-vaqt)", "callback_data": "adm_refresh"}],
                 [
-                    {"text": f"🎁 Bepul PRO Rejimi: {'🟢 YOQILGAN (BEPUL)' if free_pro else '🔒 OʻCHIRILGAN'}", "callback_data": "adm_toggle_freepro"}
+                    {"text": f"🎁 PRO Rejimi: {'🟢 HAMMAGA BEPUL' if free_pro else '🎁 Yangilarga 1-oy bepul'}", "callback_data": "adm_toggle_freepro"}
                 ],
                 [
                     {"text": f"🧾 Kutilayotgan cheklar ({pending_count})", "callback_data": "adm_pending"},

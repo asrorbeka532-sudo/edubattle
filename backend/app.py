@@ -50,12 +50,31 @@ def on_startup():
         """)
         c.execute("UPDATE users SET grade = 'Umumiy' WHERE role = 'student' OR grade != 'Umumiy'")
         c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
-        c.execute("INSERT OR IGNORE INTO app_settings (key, value, updated_at) VALUES ('free_pro_mode', '1', datetime('now'))")
+        c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('free_pro_mode', '0', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
 
-        # Set all students to PRO during 100% Free PRO Period
-        c.execute("UPDATE users SET is_pro = 1 WHERE role = 'student'")
+        # 1-Month Free Trial: ensure existing users have pro_expires_at based on creation or +30 days
+        c.execute("""
+            UPDATE users 
+            SET pro_expires_at = datetime(created_at, '+30 days'),
+                trial_used = 1
+            WHERE pro_expires_at IS NULL AND created_at IS NOT NULL
+        """)
+        c.execute("""
+            UPDATE users 
+            SET pro_expires_at = datetime('now', '+30 days'),
+                trial_used = 1
+            WHERE pro_expires_at IS NULL
+        """)
+        c.execute("""
+            UPDATE users 
+            SET is_pro = CASE 
+                WHEN pro_expires_at > datetime('now') THEN 1 
+                ELSE 0 
+            END
+            WHERE role != 'admin' AND telegram_id != 2017540097 AND LOWER(telegram_username) != 'asoee1'
+        """)
 
         # Guarantee owner / admin Telegram account (Asoee1 / 2017540097) has permanent PRO subscription
         c.execute("""
@@ -243,10 +262,10 @@ def is_free_pro_mode_active() -> bool:
         row = cursor.fetchone()
         conn.close()
         if row and row["value"] is not None:
-            return row["value"] == "1"
+            return str(row["value"]).strip() == "1"
     except Exception:
         pass
-    return True
+    return False
 
 def set_free_pro_mode(active: bool):
     val = "1" if active else "0"
@@ -258,6 +277,27 @@ def set_free_pro_mode(active: bool):
         cursor.execute("UPDATE users SET is_pro = 1 WHERE role = 'student'")
     conn.commit()
     conn.close()
+
+def is_user_pro_active(user_row) -> bool:
+    if not user_row:
+        return False
+    if is_free_pro_mode_active():
+        return True
+    u_dict = dict(user_row)
+    if u_dict.get("role") == "admin":
+        return True
+    if u_dict.get("telegram_id") == 2017540097 or str(u_dict.get("telegram_username", "")).lower() == "asoee1" or u_dict.get("id") == 18:
+        return True
+    if not u_dict.get("is_pro"):
+        return False
+    exp = u_dict.get("pro_expires_at")
+    if exp:
+        try:
+            exp_dt = datetime.strptime(str(exp)[:19], "%Y-%m-%d %H:%M:%S")
+            return exp_dt > datetime.now()
+        except Exception:
+            pass
+    return bool(u_dict.get("is_pro"))
 
 # ----------------- SECURITY UTILITIES (PBKDF2 & RATE LIMITING) -----------------
 
@@ -658,18 +698,37 @@ def register_user(payload: dict = Body(...), request: Request = None):
                 matched_tg_user = v_row["telegram_username"]
 
     avatar = "👨‍🏫" if role == "teacher" else "👨‍🎓"
-    is_pro = 1 if (role == "teacher" or is_free_pro_mode_active()) else 0
+    trial_is_pro = 1
+    trial_exp_sql = "datetime('now', '+30 days')"
+    if matched_tg_id:
+        cursor.execute("SELECT id, expires_at FROM trial_grants WHERE telegram_id = ?", (matched_tg_id,))
+        tg_tr = cursor.fetchone()
+        if tg_tr:
+            try:
+                exp_dt = datetime.strptime(tg_tr["expires_at"][:19], "%Y-%m-%d %H:%M:%S")
+                trial_is_pro = 1 if exp_dt > datetime.now() else 0
+                trial_exp_sql = f"'{tg_tr['expires_at']}'"
+            except Exception:
+                trial_is_pro = 0
+                trial_exp_sql = "NULL"
+
     hashed_pwd = hash_password(password)
 
-    cursor.execute("""
-        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, pin_code, xp, grade_score, streak, is_pro, telegram_id, telegram_username)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?)
-    """, (username, full_name, role, school_lyceum, grade, avatar, hashed_pwd, is_pro, matched_tg_id, matched_tg_user))
+    cursor.execute(f"""
+        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, pin_code, xp, grade_score, streak, is_pro, pro_expires_at, trial_used, telegram_id, telegram_username)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, {trial_is_pro}, {trial_exp_sql}, 1, ?, ?)
+    """, (username, full_name, role, school_lyceum, grade, avatar, hashed_pwd, matched_tg_id, matched_tg_user))
     user_id = cursor.lastrowid
+    if matched_tg_id:
+        cursor.execute("""
+            INSERT OR IGNORE INTO trial_grants (telegram_id, user_id, granted_at, expires_at)
+            VALUES (?, ?, datetime('now'), datetime('now', '+30 days'))
+        """, (matched_tg_id, user_id))
     conn.commit()
 
-    cursor.execute("SELECT id, username, full_name, role, school_lyceum, grade, avatar, xp, coins, grade_score, streak, is_pro, telegram_id, telegram_username FROM users WHERE id = ?", (user_id,))
+    cursor.execute("SELECT id, username, full_name, role, school_lyceum, grade, avatar, xp, coins, grade_score, streak, is_pro, pro_expires_at, telegram_id, telegram_username FROM users WHERE id = ?", (user_id,))
     user = dict(cursor.fetchone())
+    user["is_pro"] = 1 if is_user_pro_active(user) else 0
     conn.close()
 
     log_security_event("REGISTER_SUCCESS", client_ip, f"User {username} registered successfully")
@@ -789,9 +848,27 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
             c.execute("UPDATE users SET is_pro = 1, pro_expires_at = datetime('now', '+365 days') WHERE id = ?", (user_data["id"],))
             conn.commit()
 
+        user_data["is_pro"] = 1 if is_user_pro_active(user_data) else 0
         token = create_session(user_data["id"], client_ip)
         conn.close()
         return {"success": True, "user": user_data, "token": token}
+
+    # Anti-cheat check: has this telegram_id already received a 1-month trial before?
+    c.execute("SELECT id, expires_at FROM trial_grants WHERE telegram_id = ?", (tg_id,))
+    tg_trial = c.fetchone()
+    if not tg_trial:
+        # First time user: 1 month free PRO
+        trial_is_pro = 1
+        trial_exp_sql = "datetime('now', '+30 days')"
+    else:
+        # Re-install / cheat attempt: verify if still within original trial window
+        try:
+            exp_dt = datetime.strptime(tg_trial["expires_at"][:19], "%Y-%m-%d %H:%M:%S")
+            trial_is_pro = 1 if exp_dt > datetime.now() else 0
+            trial_exp_sql = f"'{tg_trial['expires_at']}'"
+        except Exception:
+            trial_is_pro = 0
+            trial_exp_sql = "NULL"
 
     # Auto-register new user from Telegram with official EB-XXXXX ID
     new_username = f"EB-{secrets.randbelow(90000) + 10000}"
@@ -801,37 +878,24 @@ def telegram_webapp_login(payload: dict = Body(...), request: Request = None):
             break
         new_username = f"EB-{secrets.randbelow(90000) + 10000}"
 
-    c.execute("""
-        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, ?, 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, ?, ?, datetime('now'), 0, ?, ?)
-    """, (new_username, full_name, requested_role, 1 if requested_role == 'teacher' else 0, hash_password("tg_pass_12345"), tg_id, tg_username))
-    conn.commit()
-    new_id = c.lastrowid
-    c.execute("SELECT id, username, full_name, role, school_lyceum, grade, avatar, xp, coins, grade_score, streak, is_pro, telegram_id FROM users WHERE id = ?", (new_id,))
-    new_row = c.fetchone()
-    conn.close()
-
-    user_data = dict(new_row)
-    token = create_session(new_id, client_ip)
-    return {"success": True, "user": user_data, "token": token}
-
-    # Auto-register new student user from Telegram
-    new_username = f"tg_{tg_id}" if not tg_username else tg_username.lower()
-    c.execute("SELECT id FROM users WHERE LOWER(username) = ?", (new_username,))
-    if c.fetchone():
-        new_username = f"EB-{secrets.randbelow(90000) + 10000}"
-
-    c.execute("""
-        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, 0, ?, datetime('now'), 0, ?, ?)
+    c.execute(f"""
+        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pro_expires_at, trial_used, pin_code, created_at, grade_score, telegram_id, telegram_username)
+        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, {trial_is_pro}, {trial_exp_sql}, 1, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, hash_password("tg_pass_12345"), tg_id, tg_username))
     conn.commit()
     new_id = c.lastrowid
-    c.execute("SELECT id, username, full_name, role, school_lyceum, grade, avatar, xp, coins, grade_score, streak, is_pro, telegram_id FROM users WHERE id = ?", (new_id,))
+    c.execute("""
+        INSERT OR IGNORE INTO trial_grants (telegram_id, user_id, granted_at, expires_at)
+        VALUES (?, ?, datetime('now'), datetime('now', '+30 days'))
+    """, (tg_id, new_id))
+    conn.commit()
+
+    c.execute("SELECT id, username, full_name, role, school_lyceum, grade, avatar, xp, coins, grade_score, streak, is_pro, pro_expires_at, telegram_id FROM users WHERE id = ?", (new_id,))
     new_row = c.fetchone()
     conn.close()
 
     user_data = dict(new_row)
+    user_data["is_pro"] = 1 if is_user_pro_active(user_data) else 0
     token = create_session(new_id, client_ip)
     return {"success": True, "user": user_data, "token": token}
 

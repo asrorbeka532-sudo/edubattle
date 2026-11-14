@@ -93,10 +93,29 @@ def is_free_pro_mode_active() -> bool:
         row = c.fetchone()
         conn.close()
         if row and row["value"] is not None:
-            return row["value"] == "1"
+            return str(row["value"]).strip() == "1"
     except Exception as e:
         logging.error(f"Error getting free_pro_mode in bot: {e}")
-    return True
+    return False
+
+def is_user_pro_active(user_row) -> bool:
+    if not user_row:
+        return False
+    if is_free_pro_mode_active():
+        return True
+    u_dict = dict(user_row)
+    if u_dict.get("telegram_id") == OWNER_ADMIN_CHAT_ID or str(u_dict.get("telegram_username", "")).lower() == "asoee1" or u_dict.get("role") == "admin":
+        return True
+    if not u_dict.get("is_pro"):
+        return False
+    exp = u_dict.get("pro_expires_at")
+    if exp:
+        try:
+            exp_dt = datetime.strptime(str(exp)[:19], "%Y-%m-%d %H:%M:%S")
+            return exp_dt > datetime.now()
+        except Exception:
+            pass
+    return bool(u_dict.get("is_pro"))
 
 def get_main_keyboard(lang="uz"):
     if lang == "ru":
@@ -517,6 +536,21 @@ def get_or_create_user(from_user):
         if full_name and (not user_dict.get("full_name") or user_dict.get("full_name") == "Telegram Foydalanuvchi"):
             user_dict["full_name"] = full_name
             needs_update = True
+
+        # Anti-cheat: verify expiration on existing user (do NOT reset or grant another 30 days)
+        if user_dict.get("is_pro") and user_dict.get("pro_expires_at"):
+            try:
+                exp_dt = datetime.strptime(str(user_dict["pro_expires_at"])[:19], "%Y-%m-%d %H:%M:%S")
+                if exp_dt < datetime.now() and tg_id != OWNER_ADMIN_CHAT_ID:
+                    cursor.execute("UPDATE users SET is_pro = 0 WHERE id = ?", (user_dict["id"],))
+                    conn.commit()
+                    user_dict["is_pro"] = 0
+            except Exception:
+                pass
+
+        if tg_id == OWNER_ADMIN_CHAT_ID or str(tg_username).lower() == "asoee1":
+            user_dict["is_pro"] = 1
+
         if needs_update:
             cursor.execute("UPDATE users SET telegram_username = ?, full_name = ? WHERE id = ?", (user_dict.get("telegram_username"), user_dict.get("full_name"), user_dict["id"]))
             conn.commit()
@@ -537,7 +571,24 @@ def get_or_create_user(from_user):
             conn.close()
             return user_dict
 
-    # 3. Auto-create user so they immediately exist in database and admin bot!
+    # 3. Anti-cheat check: has this telegram_id already received a 1-month trial before?
+    cursor.execute("SELECT id, expires_at FROM trial_grants WHERE telegram_id = ?", (tg_id,))
+    tg_trial = cursor.fetchone()
+    if not tg_trial:
+        # First time user: 1 month free PRO
+        trial_is_pro = 1
+        trial_exp_sql = "datetime('now', '+30 days')"
+    else:
+        # Re-start or cheat attempt: check if original trial window is still active
+        try:
+            exp_dt = datetime.strptime(tg_trial["expires_at"][:19], "%Y-%m-%d %H:%M:%S")
+            trial_is_pro = 1 if exp_dt > datetime.now() else 0
+            trial_exp_sql = f"'{tg_trial['expires_at']}'"
+        except Exception:
+            trial_is_pro = 0
+            trial_exp_sql = "NULL"
+
+    # Auto-create user so they immediately exist in database and admin bot!
     new_username = f"EB-{secrets.randbelow(90000) + 10000}"
     while True:
         cursor.execute("SELECT id FROM users WHERE UPPER(username) = ?", (new_username,))
@@ -550,12 +601,19 @@ def get_or_create_user(from_user):
     key = hashlib.pbkdf2_hmac("sha256", "tg_pass_12345".encode("utf-8"), salt.encode("utf-8"), 100000).hex()
     hashed_pwd = f"{salt}${key}"
 
-    cursor.execute("""
-        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
-        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, 1, ?, datetime('now'), 0, ?, ?)
+    cursor.execute(f"""
+        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pro_expires_at, trial_used, pin_code, created_at, grade_score, telegram_id, telegram_username)
+        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, {trial_is_pro}, {trial_exp_sql}, 1, ?, datetime('now'), 0, ?, ?)
     """, (new_username, full_name, hashed_pwd, tg_id, tg_username))
     conn.commit()
     new_id = cursor.lastrowid
+
+    cursor.execute("""
+        INSERT OR IGNORE INTO trial_grants (telegram_id, user_id, granted_at, expires_at)
+        VALUES (?, ?, datetime('now'), datetime('now', '+30 days'))
+    """, (tg_id, new_id))
+    conn.commit()
+
     cursor.execute("SELECT * FROM users WHERE id = ?", (new_id,))
     new_u = cursor.fetchone()
     conn.close()
@@ -1349,90 +1407,98 @@ def handle_message(message):
             send_otp_to_tg_user(chat_id, user, user_lang)
             return
 
+        pro_active = is_user_pro_active(user) if user else False
+        exp_date_str = ""
+        if user and user.get("pro_expires_at"):
+            try:
+                exp_date_str = str(user["pro_expires_at"])[:10]
+            except Exception:
+                pass
+
         if user:
             login_display = user.get("username") or "EB-..."
             if user_lang == "ru":
-                welcome_text = (
-                    f"Здравствуйте, <b>{user['full_name']}</b>! 🎓\n\n"
-                    f"Добро пожаловать в официальный бот образовательной платформы <b>Edubattle</b>!\n\n"
-                    f"👤 <b>Ваш Логин (ID):</b> <code>{login_display}</code>\n\n"
-                    f"📱 <b>Платформа работает прямо в Telegram 24/7</b> на всех устройствах: <b>iOS (iPhone/iPad)</b> и <b>Android</b>!\n\n"
-                    f"Через этот бот вы можете:\n"
-                    f"🚀 <b>Открыть EduBattle</b> — Запустить приложение прямо внутри Telegram.\n"
-                    f"💎 <b>PRO подписка</b> — Оформить премиум подписку со скидкой.\n"
-                    f"✍️ <b>Связь с админом</b> — Задать вопрос или написать отзыв администратору.\n"
-                    f"🔑 <b>Код подтверждения (OTP)</b> — Безопасный код для входа и регистрации.\n"
-                    f"🔐 <b>Сброс пароля</b> — Восстановить доступ в 1 клик.\n\n"
-                    f"🌐 Сменить язык: нажмите <b>'Сменить язык'</b> или отправьте /lang.\n\n"
-                    f"Нажмите на нужную кнопку ниже:"
-                )
+                if pro_active:
+                    welcome_text = (
+                        f"Здравствуйте, уважаемый(ая) <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"Добро пожаловать в <b>EduBattle</b> — интерактивную образовательную платформу и арену интеллектуальных битв! 🌟\n\n"
+                        f"🎁 <b>Специальный подарок для вас:</b>\n"
+                        f"Вам предоставлен <b>ПЕРВЫЙ МЕСЯЦ PRO ПОДПИСКИ АБСОЛЮТНО БЕСПЛАТНО!</b> 🚀\n\n"
+                        f"💎 <b>В течение этого месяца вам доступно:</b>\n"
+                        f"✨ Неограниченное прохождение тестов по всем предметам;\n"
+                        f"✨ Командные батлы и групповые соревнования с друзьями;\n"
+                        f"✨ 2.5X бонусных золотых монет за каждый правильный ответ;\n"
+                        f"✨ Участие в Республиканском рейтинге лидеров!\n\n"
+                        f"👤 <b>Ваш ID (Логин):</b> <code>{login_display}</code>\n"
+                        f"⏳ <b>Бесплатный PRO активен до:</b> <b>{exp_date_str or '30 дней'}</b>\n\n"
+                        f"<i>Нажмите кнопку <b>'🚀 ИГРАТЬ (PLAY)'</b> ниже, чтобы начать!</i>"
+                    )
+                else:
+                    welcome_text = (
+                        f"Здравствуйте, уважаемый(ая) <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"Добро пожаловать в <b>EduBattle</b>! 🌟\n\n"
+                        f"👤 <b>Ваш ID (Логин):</b> <code>{login_display}</code>\n\n"
+                        f"⚠️ <i>Ваш 1-месячный бесплатный ознакомительный период PRO завершен.</i>\n"
+                        f"Чтобы продолжить пользоваться безлимитными тестами, групповыми батлами и бонусами, вы можете оформить PRO подписку в меню ниже.\n\n"
+                        f"<i>Нажмите кнопку ниже, чтобы войти в игру:</i>"
+                    )
             elif user_lang == "en":
-                welcome_text = (
-                    f"Hello, <b>{user['full_name']}</b>! 🎓\n\n"
-                    f"Welcome to the official <b>Edubattle</b> educational platform bot!\n\n"
-                    f"👤 <b>Your system Login (ID):</b> <code>{login_display}</code>\n\n"
-                    f"📱 <b>Runs directly inside Telegram 24/7</b> on all devices: <b>iOS (iPhone/iPad)</b> and <b>Android</b>!\n\n"
-                    f"With this bot you can:\n"
-                    f"🚀 <b>Launch EduBattle</b> — Open the app directly in Telegram.\n"
-                    f"💎 <b>PRO Subscription</b> — Upgrade to PRO with full privileges.\n"
-                    f"✍️ <b>Contact Admin</b> — Send feedback or questions to admin.\n"
-                    f"🔑 <b>OTP Code</b> — Receive secure instant verification codes.\n"
-                    f"🔐 <b>Password Reset</b> — Quickly reset your password.\n\n"
-                    f"🌐 Change language: press <b>'Change Language'</b> or send /lang.\n\n"
-                    f"Choose an option below to start:"
-                )
-            else:
-                welcome_text = (
-                    f"Assalomu alaykum, <b>{user['full_name']}</b>! 🎓\n\n"
-                    f"<b>Edubattle</b> ta'limiy platformasining rasmiy botiga xush kelibsiz!\n\n"
-                    f"👤 <b>Sizning tizimdagi Loginingiz (ID):</b> <code>{login_display}</code>\n\n"
-                    f"📱 <b>Ilova to'g'ridan-to'g'ri Telegram ichida 24/7 ishlaydi!</b>\n"
-                    f"Hech qanday fayl yuklab olish shart emas — <b>iOS (iPhone/iPad)</b> va <b>Android</b> qurilmalarida birdek mukammal ochiladi.\n\n"
-                    f"Ushbu bot orqali siz:\n"
-                    f"🚀 <b>EduBattle Ilovasi</b> — Ilovani to'g'ridan-to'g'ri Telegramda ochish.\n"
-                    f"💎 <b>PRO Obuna</b> — Cheklovsiz imkoniyatlar uchun PRO tarifini xarid qilish.\n"
-                    f"✍️ <b>Adminga murojaat</b> — Taklif, fikr va savollar yuborish yoki admin bilan bog'lanish.\n"
-                    f"🔑 <b>Tasdiqlash kodi (OTP)</b> — Ro'yxatdan o'tish yoki kirish uchun xavfsiz kod olish.\n"
-                    f"🔐 <b>Parolni tiklash</b> — Parolingizni unutgan bo'lsangiz, uni darhol tiklash.\n\n"
-                    f"🌐 Tilni o'zgartirish uchun <b>'Tilni tanlash'</b> tugmasini bosing yoki /lang deb yozing.\n\n"
-                    f"Boshlash uchun pastdagi tugmalardan birini bosing:"
-                )
+                if pro_active:
+                    welcome_text = (
+                        f"Hello, dear <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"Welcome to <b>EduBattle</b> — Uzbekistan's leading intellectual educational arena! 🌟\n\n"
+                        f"🎁 <b>Special Welcome Gift:</b>\n"
+                        f"You have been granted <b>1 MONTH OF FULL PRO SUBSCRIPTION 100% FREE!</b> 🚀\n\n"
+                        f"💎 <b>During this free month you enjoy:</b>\n"
+                        f"✨ Unlimited tests across all school subjects;\n"
+                        f"✨ 1v1 and large multiplayer group battles with friends;\n"
+                        f"✨ 2.5X bonus gold coins for every correct answer;\n"
+                        f"✨ Direct entry into the National Leaderboard!\n\n"
+                        f"👤 <b>Your EduBattle ID:</b> <code>{login_display}</code>\n"
+                        f"⏳ <b>Free PRO valid until:</b> <b>{exp_date_str or '30 days'}</b>\n\n"
+                        f"<i>Tap <b>'🚀 PLAY NOW'</b> below to start!</i>"
+                    )
+                else:
+                    welcome_text = (
+                        f"Hello, dear <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"Welcome back to <b>EduBattle</b>! 🌟\n\n"
+                        f"👤 <b>Your EduBattle ID:</b> <code>{login_display}</code>\n\n"
+                        f"⚠️ <i>Your 1-month free trial has ended.</i>\n"
+                        f"You can upgrade to PRO anytime to unlock unlimited tests and group battles.\n\n"
+                        f"<i>Tap below to launch the app:</i>"
+                    )
+            else: # uz
+                if pro_active:
+                    welcome_text = (
+                        f"Assalomu alaykum, hurmatli <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"O'zbekiston bo'ylab o'quvchilar va bilimdonlarning intellektual bellashuv maydoni — <b>EduBattle</b> platformasiga xush kelibsiz! 🌟\n\n"
+                        f"🎁 <b>Siz uchun maxsus xush kelibsiz sovg'asi:</b>\n"
+                        f"Platformamizning barcha imkoniyatlari va <b>PRO TARIFI SIZ UCHUN BIRINCHI OY 100% MUTLAQO BEPUL</b> taqdim etildi! 🚀\n\n"
+                        f"💎 <b>Ushbu 1 oy davomida siz:</b>\n"
+                        f"✨ Barcha fanlardan cheksiz testlar ishlashingiz;\n"
+                        f"✨ Do'stlar bilan 1v1 va katta guruh batllarida bellashishingiz;\n"
+                        f"✨ Har bir to'g'ri javob uchun <b>2.5X ko'proq oltin tangalar</b> to'plashingiz;\n"
+                        f"✨ Respublika reytingida cheklovlarsiz yuqori o'rinlarni egallashingiz mumkin!\n\n"
+                        f"👤 <b>Sizning EduBattle ID (Loginingiz):</b> <code>{login_display}</code>\n"
+                        f"⏳ <b>Bepul PRO muddati:</b> <b>{exp_date_str or '30 kun'}</b> gacha faol\n\n"
+                        f"<i>Boshlash uchun pastdagi <b>'🚀 ILOVANI OCHISH (PLAY)'</b> tugmasini bosing:</i>"
+                    )
+                else:
+                    welcome_text = (
+                        f"Assalomu alaykum, hurmatli <b>{user['full_name']}</b>! 🎓\n\n"
+                        f"<b>EduBattle</b> ta'limiy platformasiga xush kelibsiz! 🌟\n\n"
+                        f"👤 <b>Sizning EduBattle ID (Loginingiz):</b> <code>{login_display}</code>\n\n"
+                        f"⚠️ <i>Sizning 1 oylik bepul PRO sinov muddatingiz yakunlangan.</i>\n"
+                        f"Cheksiz testlar va guruh batllaridan to'liq foydalanishni davom ettirish uchun pastdagi <b>'💎 PRO Obuna'</b> tugmasi orqali obunani yangilashingiz mumkin.\n\n"
+                        f"<i>Ilovani ochish uchun pastdagi tugmani bosing:</i>"
+                    )
         else:
-            if user_lang == "ru":
-                welcome_text = (
-                    f"Здравствуйте! 🎓\n\n"
-                    f"Добро пожаловать в официальный бот образовательной платформы <b>Edubattle</b>!\n\n"
-                    f"📱 <b>Платформа работает прямо в Telegram 24/7!</b>\n"
-                    f"Никаких скачиваний файлов не требуется — работает на <b>iOS (iPhone/iPad)</b> и <b>Android</b>.\n\n"
-                    f"🚀 <b>Открыть EduBattle</b> — Нажмите кнопку ниже для запуска.\n"
-                    f"💎 <b>PRO Подписка</b> — Оформить премиум доступ.\n"
-                    f"🔑 <b>Код подтверждения (OTP)</b> — Получить код для регистрации.\n\n"
-                    f"<i>Нажмите <b>'🚀 ОТКРЫТЬ ПРИЛОЖЕНИЕ'</b> ниже!</i>"
-                )
-            elif user_lang == "en":
-                welcome_text = (
-                    f"Hello! 🎓\n\n"
-                    f"Welcome to official <b>Edubattle</b> bot!\n\n"
-                    f"📱 <b>Runs directly inside Telegram 24/7!</b>\n"
-                    f"No downloads required — works on <b>iOS (iPhone/iPad)</b> and <b>Android</b>.\n\n"
-                    f"🚀 <b>Launch EduBattle</b> — Tap below to launch the app.\n"
-                    f"💎 <b>PRO Subscription</b> — Upgrade to PRO privileges.\n"
-                    f"🔑 <b>OTP Code</b> — Get code to register.\n\n"
-                    f"<i>Tap <b>'🚀 OPEN EDUBATTLE APP'</b> below!</i>"
-                )
-            else:
-                welcome_text = (
-                    f"Assalomu alaykum! 🎓\n\n"
-                    f"<b>Edubattle</b> ta'limiy platformasining rasmiy botiga xush kelibsiz!\n\n"
-                    f"📱 <b>Ilova to'liq Telegram ichida 24/7 jonli ishlaydi!</b>\n"
-                    f"Hech qanday qo'shimcha fayl yuklab olish shart emas — <b>iOS (iPhone/iPad)</b> va <b>Android</b> tizimlarida bitta tugma orqali ishga tushadi.\n\n"
-                    f"Quyidagi xizmatlardan foydalanishingiz mumkin:\n"
-                    f"🚀 <b>EduBattle Ilovasi</b> — Ilovani ochish va ro'yxatdan o'tish.\n"
-                    f"💎 <b>PRO Obuna</b> — Cheklovsiz PRO imkoniyatlariga ega bo'lish.\n"
-                    f"🔑 <b>Tasdiqlash kodi (OTP)</b> — Ro'yxatdan o'tish uchun kod olish.\n"
-                    f"🌐 <b>Tilni tanlash</b> — O'zingizga qulay tilni tanlash.\n\n"
-                    f"<i>Boshlash uchun pastdagi <b>'🚀 ILOVANI OCHISH'</b> tugmasini bosing!</i>"
-                )
+            welcome_text = (
+                f"Assalomu alaykum! 🎓\n\n"
+                f"<b>EduBattle</b> ta'limiy platformasining rasmiy botiga xush kelibsiz! 🌟\n\n"
+                f"🎁 <b>Yangi a'zolar uchun BIRINCHI OY MUTLAQO BEPUL!</b> 🚀\n"
+                f"Ilovani oching va bilimlar bellashuviga qo'shiling!"
+            )
         start_inline = {
             "inline_keyboard": [
                 [

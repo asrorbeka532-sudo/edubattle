@@ -378,6 +378,19 @@ def init_db():
     except:
         pass
     try:
+        cursor.execute("ALTER TABLE users ADD COLUMN trial_used INTEGER DEFAULT 0;")
+    except:
+        pass
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS trial_grants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_id INTEGER UNIQUE,
+        user_id INTEGER,
+        granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP
+    );
+    """)
+    try:
         cursor.execute("ALTER TABLE subscriptions ADD COLUMN receipt_file_id TEXT;")
     except:
         pass
