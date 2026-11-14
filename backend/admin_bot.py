@@ -393,6 +393,40 @@ def set_pro_price(new_price: int) -> bool:
         logger.error(f"Error saving pro price: {e}")
         return False
 
+def is_free_pro_mode_active() -> bool:
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        c.execute("SELECT value FROM app_settings WHERE key = 'free_pro_mode'")
+        row = c.fetchone()
+        conn.close()
+        if row and row["value"] is not None:
+            return row["value"] == "1"
+    except Exception as e:
+        logger.error(f"Error getting free pro mode: {e}")
+    return True
+
+def set_free_pro_mode(active: bool) -> bool:
+    val = "1" if active else "0"
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        c.execute("""
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('free_pro_mode', ?, datetime('now'))
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+        """, (val,))
+        if active:
+            c.execute("UPDATE users SET is_pro = 1 WHERE role = 'student'")
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error saving free pro mode: {e}")
+        return False
+
 # ----------------- DASHBOARD & STATS -----------------
 
 def send_dashboard(chat_id: int):
@@ -434,6 +468,8 @@ def send_dashboard(chat_id: int):
         curr_price = get_pro_price()
         formatted_price = f"{curr_price:,}".replace(",", " ")
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        free_pro = is_free_pro_mode_active()
+        free_pro_str = "🟢 HAMMAGA 100% BEPUL (Aksiya Faol)" if free_pro else "🔒 Pullik tartibda"
 
         recent_str = ""
         for u in recent_users:
@@ -444,6 +480,7 @@ def send_dashboard(chat_id: int):
         text = (
             f"🛡️ <b>EduBattle Super Admin Jonli Tablosi</b>\n"
             f"⚡️ <i>Real-vaqt holati: {now_str}</i>\n\n"
+            f"🎁 <b>Bepul PRO holati:</b> <b>{free_pro_str}</b>\n\n"
             f"📊 <b>Foydalanuvchilar:</b>\n"
             f"👨‍🎓 O'quvchilar: <b>{st_count} ta</b>\n"
             f"👨‍🏫 O'qituvchilar: <b>{tc_count} ta</b> (100% Bepul)\n"
@@ -458,6 +495,7 @@ def send_dashboard(chat_id: int):
             f"📚 Rasmiy darsliklar: <b>{book_count} ta</b> | Savollar: <b>{q_count} ta</b>\n\n"
             f"🆕 <b>So'nggi a'zolar:</b>{recent_display}\n\n"
             f"⚙️ <b>Tezkor buyruqlar:</b>\n"
+            f"• <code>/freepro on</code> / <code>/freepro off</code> — Bepul PRO holatini boshqarish\n"
             f"• <code>/setprice 35000</code> — PRO narxini o'zgartirish\n"
             f"• <code>/pending</code> — Cheklarni ko'rish va tasdiqlash\n"
             f"• <code>/addpro EB-84841</code> — Foydalanuvchiga PRO berish\n"
@@ -467,6 +505,9 @@ def send_dashboard(chat_id: int):
         markup = {
             "inline_keyboard": [
                 [{"text": "🔄 Yangilash (Real-vaqt)", "callback_data": "adm_refresh"}],
+                [
+                    {"text": f"🎁 Bepul PRO Rejimi: {'🟢 YOQILGAN (BEPUL)' if free_pro else '🔒 OʻCHIRILGAN'}", "callback_data": "adm_toggle_freepro"}
+                ],
                 [
                     {"text": f"🧾 Kutilayotgan cheklar ({pending_count})", "callback_data": "adm_pending"},
                     {"text": f"💎 PRO Obunachilar ({pro_count})", "callback_data": "adm_subscribers"}
@@ -1205,6 +1246,26 @@ def handle_message(msg: dict):
         )
         return
 
+    # Toggle Free PRO mode command: /freepro [on|off]
+    if text.startswith("/freepro"):
+        parts = text.split()
+        if len(parts) > 1:
+            arg = parts[1].lower().strip()
+            if arg in ("on", "1", "yoq", "ha", "true"):
+                set_free_pro_mode(True)
+                send_message(chat_id, "✅ <b>100% Bepul PRO rejimi YOQILDI!</b>\n\nBarcha o'quvchilar cheksiz testlar, guruh batllari va 2.5X tangalardan mutlaqo bepul foydalanadilar.", reply_markup=MAIN_ADMIN_KEYBOARD)
+                return
+            elif arg in ("off", "0", "ochir", "yoq", "false"):
+                set_free_pro_mode(False)
+                send_message(chat_id, "🔒 <b>Bepul PRO rejimi O'CHIRILDI.</b>\n\nPRO imtiyozlar faqat to'lagan yoki ruxsat berilgan a'zolarga beriladi.", reply_markup=MAIN_ADMIN_KEYBOARD)
+                return
+        curr = is_free_pro_mode_active()
+        new_val = not curr
+        set_free_pro_mode(new_val)
+        status_text = "🟢 YOQILDI (Hammaga 100% Bepul)" if new_val else "🔒 O'CHIRILDI (Faqat to'laganlarga)"
+        send_message(chat_id, f"💎 <b>Bepul PRO rejimi: {status_text}</b>", reply_markup=MAIN_ADMIN_KEYBOARD)
+        return
+
     # Admin reply command: /reply <chat_id> <matn> or /javob <chat_id> <matn>
     if text.startswith("/reply") or text.startswith("/javob"):
         parts = text.split(maxsplit=2)
@@ -1462,6 +1523,15 @@ def handle_callback_query(cq: dict):
 
     if data == "adm_refresh":
         answer_callback_query(cq_id, "🔄 Ma'lumotlar yangilandi!")
+        send_dashboard(chat_id)
+        return
+
+    if data == "adm_toggle_freepro":
+        curr = is_free_pro_mode_active()
+        new_val = not curr
+        set_free_pro_mode(new_val)
+        status_text = "🟢 Bepul PRO yoqildi!" if new_val else "🔒 Pullik PRO tartibi yoqildi!"
+        answer_callback_query(cq_id, status_text, show_alert=True)
         send_dashboard(chat_id)
         return
 

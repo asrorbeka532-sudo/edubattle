@@ -89,6 +89,20 @@ def get_pro_price() -> int:
         logging.error(f"Error getting pro_price in bot: {e}")
     return PRO_PRICE
 
+def is_free_pro_mode_active() -> bool:
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        c.execute("SELECT value FROM app_settings WHERE key = 'free_pro_mode'")
+        row = c.fetchone()
+        conn.close()
+        if row and row["value"] is not None:
+            return row["value"] == "1"
+    except Exception as e:
+        logging.error(f"Error getting free_pro_mode in bot: {e}")
+    return True
+
 def get_main_keyboard(lang="uz"):
     if lang == "ru":
         return {
@@ -610,6 +624,28 @@ def get_grade_badge(score):
 # ----------------- PRO SUBSCRIPTION & BOT PAYMENT LOGIC -----------------
 
 def start_pro_purchase_flow(chat_id, user, deep_param="", user_lang="uz"):
+    if is_free_pro_mode_active():
+        free_pro_msg = (
+            "🎉 <b>Ajoyib yangilik: EduBattle'da barcha PRO imkoniyatlar 100% BEPUL!</b>\n\n"
+            "Platformamiz barcha o'quvchilar uchun <b>barcha PRO imtiyozlarni mutlaqo bepul</b> qilib qo'ydi:\n\n"
+            "⭐ <b>Kunlik cheksiz testlar</b> (2 ta test cheklovi o'chirilgan)\n"
+            "⚔️ <b>Do'stlar va Cheksiz Guruh Batllari</b>\n"
+            "💰 <b>2.5X ko'proq tanga va XP yutish</b>\n"
+            "📝 <b>Mening testlarim (Mustaqil test tuzish va do'stlar bilan o'ynash)</b>\n\n"
+            "Sizga hech qanday to'lov qilish shart emas! Shunchaki ilovani oching va barcha imkoniyatlardan bemalol foydalaning! 🚀"
+        )
+        send_message(
+            chat_id,
+            free_pro_msg,
+            reply_markup={
+                "inline_keyboard": [
+                    [{"text": "🚀 EduBattle Ilovasini Ochish", "web_app": {"url": get_student_app_url()}}],
+                    [{"text": "✍️ Adminga murojaat", "callback_data": "btn_feedback"}]
+                ]
+            }
+        )
+        return
+
     target_user_id = None
     if deep_param.startswith("buy_pro_"):
         try:

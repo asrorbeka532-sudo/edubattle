@@ -50,8 +50,12 @@ def on_startup():
         """)
         c.execute("UPDATE users SET grade = 'Umumiy' WHERE role = 'student' OR grade != 'Umumiy'")
         c.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        c.execute("INSERT OR IGNORE INTO app_settings (key, value, updated_at) VALUES ('free_pro_mode', '1', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card', '9860160632168334', datetime('now'))")
         c.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('payment_card_holder', 'ABDULLAYEV A', datetime('now'))")
+
+        # Set all students to PRO during 100% Free PRO Period
+        c.execute("UPDATE users SET is_pro = 1 WHERE role = 'student'")
 
         # Guarantee owner / admin Telegram account (Asoee1 / 2017540097) has permanent PRO subscription
         c.execute("""
@@ -229,6 +233,32 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Expires"] = "0"
     return response
 
+# ----------------- SYSTEM PRO MODE CONFIGURATION -----------------
+def is_free_pro_mode_active() -> bool:
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+        cursor.execute("SELECT value FROM app_settings WHERE key = 'free_pro_mode'")
+        row = cursor.fetchone()
+        conn.close()
+        if row and row["value"] is not None:
+            return row["value"] == "1"
+    except Exception:
+        pass
+    return True
+
+def set_free_pro_mode(active: bool):
+    val = "1" if active else "0"
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP)")
+    cursor.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('free_pro_mode', ?, datetime('now'))", (val,))
+    if active:
+        cursor.execute("UPDATE users SET is_pro = 1 WHERE role = 'student'")
+    conn.commit()
+    conn.close()
+
 # ----------------- SECURITY UTILITIES (PBKDF2 & RATE LIMITING) -----------------
 
 def hash_password(password: str) -> str:
@@ -278,7 +308,10 @@ def get_current_user_from_token(token: str) -> Optional[dict]:
         return None
 
     user_dict = dict(row)
-    if user_dict.get("role") == "student" and user_dict.get("is_pro") and user_dict.get("pro_expires_at"):
+    if is_free_pro_mode_active():
+        user_dict["is_pro"] = 1
+        user_dict["free_pro_mode"] = True
+    elif user_dict.get("role") == "student" and user_dict.get("is_pro") and user_dict.get("pro_expires_at"):
         try:
             exp_str = user_dict["pro_expires_at"][:19]
             exp_dt = datetime.strptime(exp_str, "%Y-%m-%d %H:%M:%S")
@@ -625,7 +658,7 @@ def register_user(payload: dict = Body(...), request: Request = None):
                 matched_tg_user = v_row["telegram_username"]
 
     avatar = "👨‍🏫" if role == "teacher" else "👨‍🎓"
-    is_pro = 1 if role == "teacher" else 0
+    is_pro = 1 if (role == "teacher" or is_free_pro_mode_active()) else 0
     hashed_pwd = hash_password(password)
 
     cursor.execute("""
@@ -861,6 +894,10 @@ def login_user(payload: dict = Body(...), request: Request = None):
 
     conn.close()
     clear_login_failure(rate_key)
+
+    if is_free_pro_mode_active():
+        user_dict["is_pro"] = 1
+        user_dict["free_pro_mode"] = True
 
     token = create_session(user_dict["id"], client_ip)
     del user_dict["pin_code"]
@@ -1271,7 +1308,10 @@ def get_user_detail(user_id: int):
         conn.close()
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
     u = dict(row)
-    if u.get("role") == "student" and u.get("is_pro") and u.get("pro_expires_at"):
+    if is_free_pro_mode_active():
+        u["is_pro"] = 1
+        u["free_pro_mode"] = True
+    elif u.get("role") == "student" and u.get("is_pro") and u.get("pro_expires_at"):
         try:
             exp_str = u["pro_expires_at"][:19]
             exp_dt = datetime.strptime(exp_str, "%Y-%m-%d %H:%M:%S")
@@ -1412,7 +1452,7 @@ def submit_test(payload: dict = Body(...)):
             "message": "O'qituvchi yoki admin sinovi (o'quvchi sifatida baholanmaydi)"
         }
 
-    is_pro = bool(u_row["is_pro"])
+    is_pro = True if is_free_pro_mode_active() else bool(u_row["is_pro"])
 
     # Check daily test limit for Free users (Max 2 tests/day)
     cursor.execute("""
@@ -2476,6 +2516,19 @@ def get_pro_price() -> int:
         logger.error(f"Error fetching pro_price: {e}")
     return DEFAULT_PRO_PRICE
 
+@app.get("/api/system/pro-mode")
+def get_system_pro_mode():
+    return {
+        "free_pro_mode": is_free_pro_mode_active(),
+        "pro_price": get_pro_price()
+    }
+
+@app.post("/api/admin/toggle-free-pro")
+def toggle_free_pro(payload: dict = Body(...)):
+    active = bool(payload.get("active", True))
+    set_free_pro_mode(active)
+    return {"success": True, "free_pro_mode": active}
+
 TARIFF_PLANS = {
     "student_pro": {
         "id": "student_pro",
@@ -3289,7 +3342,7 @@ async def finish_game(room: BattleRoom):
         ))
         if winner and winner.get("id") and not winner.get("is_bot"):
             w_id = winner["id"]
-            w_pro = bool(winner.get("is_pro", False))
+            w_pro = True if is_free_pro_mode_active() else bool(winner.get("is_pro", False))
             coins_reward = 100 if w_pro else 50
             cursor.execute("UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?", (coins_reward, w_id))
             cursor.execute("""
@@ -3330,7 +3383,7 @@ def create_battle_room(payload: dict = Body(...)):
     c.execute("SELECT is_pro FROM users WHERE id = ?", (host_id,))
     u_row = c.fetchone()
     conn.close()
-    host_is_pro = bool(u_row["is_pro"]) if u_row else False
+    host_is_pro = True if is_free_pro_mode_active() else (bool(u_row["is_pro"]) if u_row else False)
 
     # Check custom quiz login & passcode if provided
     custom_quiz_login = (payload.get("custom_quiz_login") or "").strip()
@@ -3475,8 +3528,9 @@ def teacher_add_student_to_group(group_id: int, payload: dict = Body(...)):
 
 @app.get("/api/user-test-limit/{user_id}")
 def check_user_test_limit(user_id: int):
+    is_free_mode = is_free_pro_mode_active()
     if not user_id:
-        return {"allowed": True, "today_count": 0, "max_limit": 2, "is_pro": False}
+        return {"allowed": True, "today_count": 0, "max_limit": 999 if is_free_mode else 2, "is_pro": is_free_mode}
     
     conn = get_db()
     c = conn.cursor()
@@ -3484,9 +3538,9 @@ def check_user_test_limit(user_id: int):
     u = c.fetchone()
     if not u:
         conn.close()
-        return {"allowed": True, "today_count": 0, "max_limit": 2, "is_pro": False}
+        return {"allowed": True, "today_count": 0, "max_limit": 999 if is_free_mode else 2, "is_pro": is_free_mode}
     
-    is_pro = bool(u["is_pro"]) or (u["role"] in ("teacher", "admin"))
+    is_pro = bool(u["is_pro"]) or (u["role"] in ("teacher", "admin")) or is_free_mode
     
     # Check submissions today
     c.execute("""
@@ -3500,9 +3554,9 @@ def check_user_test_limit(user_id: int):
     return {
         "allowed": allowed,
         "today_count": today_count,
-        "max_limit": 2,
+        "max_limit": 999 if is_free_mode else 2,
         "is_pro": is_pro,
-        "remaining": max(0, 2 - today_count) if not is_pro else 999
+        "remaining": 999 if is_pro else max(0, 2 - today_count)
     }
 
 @app.get("/api/blitz/current")
@@ -3623,10 +3677,10 @@ def submit_blitz_answer(payload: dict = Body(...)):
         """, (new_eb, hash_password("pass_12345")))
         conn.commit()
         actual_user_id = c.lastrowid
-        is_pro = False
+        is_pro = True if is_free_pro_mode_active() else False
     else:
         actual_user_id = u["id"]
-        is_pro = bool(u["is_pro"])
+        is_pro = True if is_free_pro_mode_active() else bool(u["is_pro"])
 
     # Check duplicate
     c.execute("SELECT id FROM blitz_submissions WHERE user_id = ? AND subject_id = ? AND minute_epoch = ?", (actual_user_id, subject_id, minute_epoch))

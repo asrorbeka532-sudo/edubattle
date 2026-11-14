@@ -38,9 +38,11 @@ const state = {
   selectedPaymentProvider: 'click',
   selectedPaymentPlan: 'student_pro',
   proPrice: 29000,
+  freeProMode: true,
   audioEnabled: true,
   audioCtx: null
 };
+window.freeProMode = true;
 
 // ----------------- AUDIO SYNTHESIZER -----------------
 function initAudio() {
@@ -205,6 +207,8 @@ function handleHeaderProClick() {
     window.location.href = '/admin-portal.html';
   } else if (state.currentUser && state.currentUser.role === 'teacher') {
     alert("👨‍🏫 Siz o'qituvchisiz! O'qituvchi kabineti orqali sinflar, testlar va darsliklarni boshqarishingiz mumkin.");
+  } else if (state.freeProMode !== false) {
+    alert("🎉 Aksiya: Barcha PRO imkoniyatlar 100% BEPUL!\n\nSizda cheksiz kunlik testlar, 3-5 kishilik va cheksiz guruh batllari hamda 2.5X tangalar to'liq faollashtirilgan.");
   } else {
     openPaymentModal('student_pro');
   }
@@ -1898,7 +1902,17 @@ function applyDynamicTariffPrice(amount) {
   const promoTag = document.querySelector('#proPromotionCard .tag-red');
   if (promoTag) promoTag.textContent = `${formatted} / oy`;
 
-  if (state.currentUser && !state.currentUser.is_pro && state.currentUser.role !== 'teacher' && state.currentUser.role !== 'admin') {
+  if (state.freeProMode !== false) {
+    const headerPill = document.getElementById('headerProPill');
+    if (headerPill) headerPill.textContent = '💎 PRO (Bepul)';
+    const promoBtn = document.querySelector('#proPromotionCard button');
+    if (promoBtn) promoBtn.textContent = '✅ Barcha PRO Imkoniyatlar Bepul';
+    const promoTag = document.querySelector('#proPromotionCard .tag-red');
+    if (promoTag) {
+      promoTag.textContent = '100% BEPUL';
+      promoTag.className = 'tag tag-green';
+    }
+  } else if (state.currentUser && !state.currentUser.is_pro && state.currentUser.role !== 'teacher' && state.currentUser.role !== 'admin') {
     const headerPill = document.getElementById('headerProPill');
     if (headerPill) headerPill.textContent = `💎 PRO: ${formatted}`;
   }
@@ -3572,7 +3586,7 @@ async function updateHomeDailyLimitBadge() {
     if (coinsEl) coinsEl.textContent = (user.coins || 0).toLocaleString();
 
     const isTeacher = user.role === 'teacher' || user.role === 'admin';
-    const isPro = user.is_pro === 1 || user.is_pro === true;
+    const isPro = user.is_pro === 1 || user.is_pro === true || state.freeProMode !== false;
 
     if (isTeacher || isPro) {
       if (limitEl) {
@@ -3602,11 +3616,11 @@ function checkDailyTestLimit() {
     return;
   }
   const isTeacher = user.role === 'teacher' || user.role === 'admin';
-  const isPro = user.is_pro === 1 || user.is_pro === true;
+  const isPro = user.is_pro === 1 || user.is_pro === true || state.freeProMode !== false;
   if (!isTeacher && !isPro) {
     openModal('proLimitModal');
   } else {
-    alert("👑 Sizda PRO obuna faol! Siz cheklovsiz testlar va barcha imkoniyatlardan foydalanishingiz mumkin.");
+    alert("👑 Sizda barcha PRO imkoniyatlar faol va mutlaqo BEPUL! Cheklovsiz testlar, jamoaviy batllar va 2.5X tangalardan erkin foydalanishingiz mumkin.");
   }
 }
 

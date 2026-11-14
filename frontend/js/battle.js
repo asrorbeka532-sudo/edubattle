@@ -25,14 +25,13 @@ function selectBattleQuestionCount(count) {
   playSound('click');
   const targetCount = parseInt(count) || 5;
 
-  if (targetCount === 15 || targetCount === 30) {
-    if (!state.currentUser || !state.currentUser.is_pro) {
-      const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
-      if (confirm(`⚡ ${targetCount} talik batl xonasini ochish uchun PRO obuna talab qilinadi! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
-        openPaymentModal('student_pro');
-      }
-      return;
+  const isUserPro = (window.freeProMode !== false) || (state.currentUser && state.currentUser.is_pro);
+  if ((targetCount === 15 || targetCount === 30) && !isUserPro) {
+    const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
+    if (confirm(`⚡ ${targetCount} talik batl xonasini ochish uchun PRO obuna talab qilinadi! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
+      openPaymentModal('student_pro');
     }
+    return;
   }
 
   battleState.questionCount = targetCount;
@@ -60,9 +59,10 @@ function selectBattleMode(mode) {
   if (cardPro) cardPro.classList.remove('selected');
   if (cardGroup) cardGroup.classList.remove('selected');
 
+  const isUserPro = (window.freeProMode !== false) || (state.currentUser && state.currentUser.is_pro);
+
   if (mode === 'group') {
-    // Check if user is PRO
-    if (!state.currentUser || !state.currentUser.is_pro) {
+    if (!isUserPro) {
       const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
       if (confirm(`⚡ Cheksiz ishtirokchili Guruh Batli faqat PRO obunachilar uchun! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
         openPaymentModal('student_pro');
@@ -74,8 +74,7 @@ function selectBattleMode(mode) {
     if (cardGroup) cardGroup.classList.add('selected');
     if (proSlider) proSlider.style.display = 'none';
   } else if (mode === 'pro_3_5') {
-    // Check if user is PRO
-    if (!state.currentUser || !state.currentUser.is_pro) {
+    if (!isUserPro) {
       const pText = window.edubattleProPrice ? `${Number(window.edubattleProPrice).toLocaleString()} so'mlik ` : "29 000 so'mlik ";
       if (confirm(`⚡ 3-5 kishilik batllar faqat PRO obunachilar uchun! Hozir ${pText}PRO tarifiga ulanasizmi?`)) {
         openPaymentModal('student_pro');
