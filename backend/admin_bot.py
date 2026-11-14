@@ -36,7 +36,7 @@ logger = logging.getLogger("AdminBot")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
-DB_PATH = os.path.join(os.path.dirname(__file__), "edubattle.db")
+from database import get_db, DB_PATH
 ADMIN_BOT_TOKEN = os.environ.get("ADMIN_BOT_TOKEN", "8898266998:AAE09rQN6Uf7vhvHI7MPUIiIU1evtbjpt_U")
 USER_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g")
 ADMIN_SECRET_PASSWORDS = ["asoee321", "admin2026"]
@@ -87,11 +87,6 @@ def set_admin_bot_menu_button(chat_id=None):
     logger.info(f"Admin Bot Menu Button set (chat_id={chat_id}): {res}")
 
 user_states: Dict[int, Dict[str, Any]] = {}
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def download_file_with_token(file_id: str, dest_path: str, bot_token: str) -> bool:
@@ -461,7 +456,7 @@ def send_dashboard(chat_id: int):
         c.execute("SELECT COUNT(*) FROM questions")
         q_count = c.fetchone()[0]
 
-        c.execute("SELECT full_name, username, role, school_lyceum, grade FROM users ORDER BY id DESC LIMIT 5")
+        c.execute("SELECT full_name, username, role, school_lyceum, grade, telegram_username FROM users ORDER BY id DESC LIMIT 8")
         recent_users = c.fetchall()
         conn.close()
 
@@ -474,8 +469,9 @@ def send_dashboard(chat_id: int):
         recent_str = ""
         for u in recent_users:
             r_icon = "👨‍🏫" if u["role"] == "teacher" else "👨‍🎓"
-            recent_str += f"\n• {r_icon} <b>{u['full_name']}</b> (<code>@{u['username']}</code>) — {u['school_lyceum'] or 'Maktab'} {u['grade'] or ''}"
-        recent_display = recent_str or "\nHali foydalanuvchilar yoq"
+            tg_info = f" (@{u['telegram_username']})" if u["telegram_username"] else ""
+            recent_str += f"\n• {r_icon} <b>{u['full_name']}</b>{tg_info} (<code>{u['username']}</code>)"
+        recent_display = recent_str or "\nHali foydalanuvchilar yo'q"
 
         text = (
             f"🛡️ <b>EduBattle Super Admin Jonli Tablosi</b>\n"
@@ -726,13 +722,13 @@ def show_users_list(chat_id: int, role: str):
     conn = get_db()
     c = conn.cursor()
     if role == "teacher":
-        c.execute("SELECT id, username, full_name, school_lyceum, grade FROM users WHERE role = 'teacher' ORDER BY id DESC LIMIT 25")
+        c.execute("SELECT id, username, full_name, school_lyceum, grade, telegram_username, created_at FROM users WHERE role = 'teacher' ORDER BY id DESC LIMIT 25")
         rows = c.fetchall()
         c.execute("SELECT COUNT(*) FROM users WHERE role = 'teacher'")
         total = c.fetchone()[0]
         header = f"👨‍🏫 <b>O'qituvchilar / Ustozlar Ro'yxati (Jami: {total} ta)</b>\n<i>Eslatma: O'qituvchilar uchun 100% BEPUL!</i>\n━━━━━━━━━━━━━━━━━━━━━━\n"
     else:
-        c.execute("SELECT id, username, full_name, school_lyceum, grade, is_pro FROM users WHERE role != 'teacher' AND role != 'admin' ORDER BY id DESC LIMIT 25")
+        c.execute("SELECT id, username, full_name, school_lyceum, grade, is_pro, telegram_username, created_at FROM users WHERE role != 'teacher' AND role != 'admin' ORDER BY id DESC LIMIT 25")
         rows = c.fetchall()
         c.execute("SELECT COUNT(*) FROM users WHERE role != 'teacher' AND role != 'admin'")
         total = c.fetchone()[0]
@@ -746,7 +742,9 @@ def show_users_list(chat_id: int, role: str):
     text = header
     for idx, u in enumerate(rows, 1):
         icon = "👨‍🏫" if role == "teacher" else ("💎" if u["is_pro"] else "👨‍🎓")
-        text += f"{idx}. {icon} <b>{u['full_name']}</b> (<code>@{u['username']}</code>)\n   🏫 {u['school_lyceum'] or 'Maktab'} • {u['grade'] or ''}\n"
+        tg_info = f" (@{u['telegram_username']})" if u["telegram_username"] else ""
+        date_str = f" • 🕒 {str(u['created_at'])[:16]}" if u.get("created_at") else ""
+        text += f"{idx}. {icon} <b>{u['full_name']}</b>{tg_info} (<code>{u['username']}</code>)\n   🏫 {u['school_lyceum'] or 'Maktab'} • {u['grade'] or ''}{date_str}\n"
 
     if total > 25:
         text += f"\n<i>Ko'rsatildi: 25/{total} ta. Muayyan odamni qidirish uchun: <code>/find login</code></i>"
@@ -756,7 +754,7 @@ def show_users_list(chat_id: int, role: str):
         inline_buttons = []
         for u in rows[:15]:
             inline_buttons.append([
-                {"text": f"🗑️ {u['full_name']} (@{u['username']}) ni o'chirish", "callback_data": f"adm_prompt_del_{u['id']}"}
+                {"text": f"🗑️ {u['full_name']} ({u['username']}) ni o'chirish", "callback_data": f"adm_prompt_del_{u['id']}"}
             ])
         markup = {"inline_keyboard": inline_buttons}
     send_message(chat_id, text, reply_markup=markup)

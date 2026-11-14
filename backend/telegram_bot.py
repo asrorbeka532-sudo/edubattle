@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] (Tel
 
 BOT_TOKEN = "9257869395:AAEBBDaRErf08ZkYTlsrORIhsPXd6x8M2-g"
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-DB_PATH = os.path.join(os.path.dirname(__file__), "edubattle.db")
+from database import get_db, DB_PATH
 
 # Admin and Payment Configurations
 NETLIFY_APP_URL = "https://edubattle-uz.netlify.app"
@@ -69,11 +69,6 @@ def is_admin_chat(chat_id: int) -> bool:
         return chat_id in get_all_authenticated_admin_chat_ids()
     except Exception:
         return False
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def get_pro_price() -> int:
     try:
@@ -499,38 +494,75 @@ def generate_auto_login_sync():
     conn.close()
     return f"EB-{int(time.time()) % 100000}"
 
-def get_registered_user(from_user):
+def get_or_create_user(from_user):
+    if not from_user:
+        return None
     tg_id = from_user.get("id")
     tg_username = from_user.get("username")
+    first_name = (from_user.get("first_name") or "").strip()
+    last_name = (from_user.get("last_name") or "").strip()
+    full_name = f"{first_name} {last_name}".strip() or tg_username or "Telegram Foydalanuvchi"
 
     conn = get_db()
     cursor = conn.cursor()
-    # 1. Match by telegram_id with completed registration (pin_code IS NOT NULL)
-    cursor.execute("SELECT * FROM users WHERE telegram_id = ? AND pin_code IS NOT NULL", (tg_id,))
+    # 1. Match by telegram_id
+    cursor.execute("SELECT * FROM users WHERE telegram_id = ?", (tg_id,))
     u = cursor.fetchone()
     if u:
         user_dict = dict(u)
+        needs_update = False
         if tg_username and user_dict.get("telegram_username") != tg_username:
-            cursor.execute("UPDATE users SET telegram_username = ? WHERE id = ?", (tg_username, user_dict["id"]))
-            conn.commit()
             user_dict["telegram_username"] = tg_username
+            needs_update = True
+        if full_name and (not user_dict.get("full_name") or user_dict.get("full_name") == "Telegram Foydalanuvchi"):
+            user_dict["full_name"] = full_name
+            needs_update = True
+        if needs_update:
+            cursor.execute("UPDATE users SET telegram_username = ?, full_name = ? WHERE id = ?", (user_dict.get("telegram_username"), user_dict.get("full_name"), user_dict["id"]))
+            conn.commit()
         conn.close()
         return user_dict
 
-    # 2. Check if a user registered on web with this telegram_username and has completed registration
+    # 2. Check if a user registered on web with this telegram_username or username
     if tg_username:
-        cursor.execute("SELECT * FROM users WHERE LOWER(telegram_username) = ? AND pin_code IS NOT NULL", (tg_username.lower().lstrip('@'),))
+        clean_un = tg_username.lower().lstrip('@')
+        cursor.execute("SELECT * FROM users WHERE LOWER(telegram_username) = ? OR LOWER(username) = ?", (clean_un, clean_un))
         u_match = cursor.fetchone()
         if u_match:
             user_dict = dict(u_match)
-            cursor.execute("UPDATE users SET telegram_id = ? WHERE id = ?", (tg_id, user_dict["id"]))
+            cursor.execute("UPDATE users SET telegram_id = ?, telegram_username = ? WHERE id = ?", (tg_id, tg_username, user_dict["id"]))
             conn.commit()
             user_dict["telegram_id"] = tg_id
+            user_dict["telegram_username"] = tg_username
             conn.close()
             return user_dict
 
+    # 3. Auto-create user so they immediately exist in database and admin bot!
+    new_username = f"EB-{secrets.randbelow(90000) + 10000}"
+    while True:
+        cursor.execute("SELECT id FROM users WHERE UPPER(username) = ?", (new_username,))
+        if not cursor.fetchone():
+            break
+        new_username = f"EB-{secrets.randbelow(90000) + 10000}"
+
+    import hashlib
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac("sha256", "tg_pass_12345".encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+    hashed_pwd = f"{salt}${key}"
+
+    cursor.execute("""
+        INSERT INTO users (username, full_name, role, school_lyceum, grade, avatar, xp, coins, streak, is_pro, pin_code, created_at, grade_score, telegram_id, telegram_username)
+        VALUES (?, ?, 'student', 'EduBattle Online', 'Umumiy', '👨‍🎓', 0, 0, 1, 1, ?, datetime('now'), 0, ?, ?)
+    """, (new_username, full_name, hashed_pwd, tg_id, tg_username))
+    conn.commit()
+    new_id = cursor.lastrowid
+    cursor.execute("SELECT * FROM users WHERE id = ?", (new_id,))
+    new_u = cursor.fetchone()
     conn.close()
-    return None
+    return dict(new_u) if new_u else None
+
+def get_registered_user(from_user):
+    return get_or_create_user(from_user)
 
 def find_quiz_by_pin(pin_code):
     clean_pin = pin_code.strip().upper()
