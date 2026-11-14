@@ -1003,6 +1003,19 @@ def handle_message(msg: dict):
                 send_message(chat_id, "⚠️ Noto'g'ri summa kiritildi. Masalan: 35000", reply_markup=MAIN_ADMIN_KEYBOARD)
             return
 
+        if action == "WAIT_REPLY":
+            target_chat_id = state.get("target_chat_id")
+            user_states.pop(chat_id, None)
+            if target_chat_id:
+                reply_text = (
+                    f"📩 <b>Administrator javobi:</b>\n\n"
+                    f"{text}\n\n"
+                    f"<i>Admin bilan bog'lanish: @Asoee1</i>"
+                )
+                notify_user_via_main_bot(target_chat_id, reply_text)
+                send_message(chat_id, f"✅ Foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) javob muvaffaqiyatli yetkazildi!", reply_markup=MAIN_ADMIN_KEYBOARD)
+            return
+
         if action == "WAIT_FIND":
             user_states.pop(chat_id, None)
             find_user(chat_id, text)
@@ -1191,6 +1204,24 @@ def handle_message(msg: dict):
             }
         )
         return
+
+    # Admin reply command: /reply <chat_id> <matn> or /javob <chat_id> <matn>
+    if text.startswith("/reply") or text.startswith("/javob"):
+        parts = text.split(maxsplit=2)
+        if len(parts) >= 3 and parts[1].strip().isdigit():
+            target_chat_id = int(parts[1].strip())
+            reply_body = parts[2].strip()
+            reply_text = (
+                f"📩 <b>Administrator javobi:</b>\n\n"
+                f"{reply_body}\n\n"
+                f"<i>Admin bilan bog'lanish: @Asoee1</i>"
+            )
+            notify_user_via_main_bot(target_chat_id, reply_text)
+            send_message(chat_id, f"✅ Foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) javob yuborildi!", reply_markup=MAIN_ADMIN_KEYBOARD)
+            return
+        else:
+            send_message(chat_id, "⚠️ Foydalanish: <code>/reply [chat_id] [javob matni]</code>", reply_markup=MAIN_ADMIN_KEYBOARD)
+            return
 
     if text in ("📊 Jonli Statistika", "/stats", "/admin"):
         send_dashboard(chat_id)
@@ -1501,6 +1532,22 @@ def handle_callback_query(cq: dict):
         )
         return
 
+    if data.startswith("adm_reply_"):
+        target_chat_id = data.replace("adm_reply_", "").strip()
+        user_states[chat_id] = {
+            "action": "WAIT_REPLY",
+            "target_chat_id": int(target_chat_id)
+        }
+        answer_callback_query(cq_id, "Javob yozish rejimi faollashdi")
+        send_message(
+            chat_id,
+            f"✍️ <b>Foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) javob yozish:</b>\n\n"
+            f"Quyida javob matnini yozib yuboring. Xabar asosiy bot orqali o'quvchiga yetkaziladi.\n\n"
+            f"<i>(Bekor qilish uchun: ❌ Bekor qilish)</i>",
+            reply_markup=CANCEL_KEYBOARD
+        )
+        return
+
     if data.startswith("adm_confirm_del_"):
         target_id = int(data.split("_")[-1])
         ok, msg = delete_user_permanently(target_id)
@@ -1564,6 +1611,39 @@ def notify_admins_of_new_receipt(receipt_data: dict):
                 send_message(a_id, caption, reply_markup=markup)
         except Exception as e:
             logger.error(f"Error alerting admin {a_id}: {e}")
+
+def notify_admins_of_feedback(feedback_data: dict):
+    """
+    Called when a student sends feedback, suggestions or complaints.
+    Broadcasts the alert and a reply button to authenticated admins in AdminBot.
+    """
+    admin_ids = get_all_authenticated_admin_chat_ids()
+    if not admin_ids:
+        return
+    
+    caption = (
+        f"📩 <b>YANGI MUROJAAT / TAKLIF VA SHIKOYAT</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>Foydalanuvchi:</b> {feedback_data.get('full_name')}\n"
+        f"🆔 <b>Login:</b> <code>{feedback_data.get('username')}</code>\n"
+        f"📱 <b>Telegram:</b> {feedback_data.get('tg_user_str')}\n"
+        f"🔢 <b>Chat ID:</b> <code>{feedback_data.get('chat_id')}</code>\n"
+        f"📅 <b>Vaqt:</b> {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"💬 <b>Xabar:</b>\n{feedback_data.get('text') or '<i>(Media biriktirilgan)</i>'}\n"
+    )
+    markup = {
+        "inline_keyboard": [
+            [
+                {"text": "✍️ Javob yozish", "callback_data": f"adm_reply_{feedback_data.get('chat_id')}"}
+            ]
+        ]
+    }
+    for a_id in admin_ids:
+        try:
+            send_message(a_id, caption, reply_markup=markup)
+        except Exception as e:
+            logger.error(f"Error alerting admin {a_id} of feedback: {e}")
 
 # ----------------- BOT POLLING WORKER -----------------
 

@@ -57,6 +57,19 @@ PAYMENT_CARD = "9860160632168334"
 PAYMENT_CARD_HOLDER = "ABDULLAYEV A"
 PRO_PRICE = 29000
 
+OWNER_ADMIN_CHAT_ID = 2017540097  # @Asoee1 shaxsiy Telegram ID si
+ADMIN_USERNAME = "Asoee1"
+ADMIN_DIRECT_URL = "https://t.me/Asoee1"
+
+def is_admin_chat(chat_id: int) -> bool:
+    if chat_id == OWNER_ADMIN_CHAT_ID:
+        return True
+    try:
+        from admin_bot import get_all_authenticated_admin_chat_ids
+        return chat_id in get_all_authenticated_admin_chat_ids()
+    except Exception:
+        return False
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -82,6 +95,7 @@ def get_main_keyboard(lang="uz"):
             "keyboard": [
                 [{"text": "🚀 EduBattle Ilovasi", "web_app": {"url": get_student_app_url()}}],
                 [{"text": "💎 Купить подписку PRO"}],
+                [{"text": "✍️ Связь с админом"}],
                 [{"text": "🔑 Код подтверждения (OTP)"}, {"text": "🌐 Сменить язык"}]
             ],
             "resize_keyboard": True,
@@ -92,6 +106,7 @@ def get_main_keyboard(lang="uz"):
             "keyboard": [
                 [{"text": "🚀 Open EduBattle App", "web_app": {"url": get_student_app_url()}}],
                 [{"text": "💎 Purchase PRO Subscription"}],
+                [{"text": "✍️ Contact Admin"}],
                 [{"text": "🔑 Verification Code (OTP)"}, {"text": "🔐 Reset Password"}],
                 [{"text": "🌐 Change Language (Til / Lang)"}]
             ],
@@ -103,6 +118,7 @@ def get_main_keyboard(lang="uz"):
             "keyboard": [
                 [{"text": "🚀 EduBattle Ilovasi", "web_app": {"url": get_student_app_url()}}],
                 [{"text": "💎 PRO Obuna sotib olish"}],
+                [{"text": "✍️ Adminga murojaat"}],
                 [{"text": "🔑 Tasdiqlash kodi (OTP)"}, {"text": "🌐 Tilni tanlash"}]
             ],
             "resize_keyboard": True,
@@ -220,6 +236,7 @@ def setup_bot_commands():
         cmds = [
             {"command": "start", "description": "🚀 Ilovani ochish / Главное меню / Main Menu"},
             {"command": "app", "description": "🎮 EduBattle Mini App ochish"},
+            {"command": "murojaat", "description": "✍️ Adminga murojaat / Связь с админом / Support"},
             {"command": "pro", "description": "💎 PRO Obuna sotib olish / Купить PRO"},
             {"command": "code", "description": "🔑 Tasdiqlash kodi (OTP) / Код подтверждения"},
             {"command": "reset", "description": "🔐 Parolni tiklash / Сброс пароля"},
@@ -824,6 +841,166 @@ def handle_payment_receipt(message, file_id, file_type, user):
 # NOTE: All Admin operations (dashboard, approvals, price change, pdf upload) 
 # have been cleanly moved exclusively to Admin Bot (@admidinsfesefse_bot).
 
+# ----------------- USER FEEDBACK / ADMINGA MUROJAAT -----------------
+
+def handle_user_feedback(message, user=None):
+    chat_id = message.get("chat", {}).get("id")
+    from_user = message.get("from", {})
+    text = (message.get("text") or message.get("caption") or "").strip()
+
+    # If user wants to cancel
+    if text in ("/cancel", "/bekor", "❌ Bekor qilish", "❌ Отмена", "❌ Cancel"):
+        user_states.pop(chat_id, None)
+        user_lang = (user.get("lang") if user else None) or "uz"
+        send_message(chat_id, "Amal bekor qilindi. Bosh menyudasiz:", reply_markup=get_main_keyboard(user_lang))
+        return
+
+    # Basic telegram details
+    tg_first = from_user.get("first_name", "")
+    tg_last = from_user.get("last_name", "")
+    tg_full = f"{tg_first} {tg_last}".strip() or "Noma'lum"
+    tg_username = from_user.get("username")
+    tg_user_str = f"@{tg_username}" if tg_username else "Mavjud emas"
+
+    # Profile from DB
+    eb_login = "-"
+    eb_name = tg_full
+    role = "Foydalanuvchi"
+    school = "Ko'rsatilmagan"
+    grade = "-"
+    coins = 0
+    is_pro_str = "Oddiy"
+
+    db_user = user or get_registered_user(from_user)
+    if not db_user:
+        try:
+            conn = get_db()
+            c = conn.cursor()
+            c.execute("SELECT * FROM users WHERE telegram_id = ? OR LOWER(telegram_username) = ?", (chat_id, (tg_username or "").lower()))
+            r = c.fetchone()
+            conn.close()
+            if r:
+                db_user = dict(r)
+        except Exception:
+            pass
+
+    if db_user:
+        eb_login = db_user.get("username") or "-"
+        eb_name = db_user.get("full_name") or tg_full
+        role = db_user.get("role") or "O'quvchi"
+        school = db_user.get("school_name") or db_user.get("school") or "Ko'rsatilmagan"
+        grade = str(db_user.get("grade") or "-")
+        coins = db_user.get("coins", 0)
+        is_pro_str = "👑 PRO A'zo" if db_user.get("is_pro") else "Oddiy"
+
+    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    admin_caption = (
+        "📩 <b>#YANGI_MUROJAAT / TAKLIF VA SHIKOYAT</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>Foydalanuvchi:</b> {eb_name} ({tg_full})\n"
+        f"🆔 <b>EduBattle Login:</b> <code>{eb_login}</code>\n"
+        f"🎭 <b>Roli:</b> {role} | <b>Sinf:</b> {grade}\n"
+        f"🏫 <b>Maktab:</b> {school}\n"
+        f"⭐ <b>Obuna:</b> {is_pro_str} | 💰 <b>Tangalar:</b> {coins} 🪙\n"
+        f"📱 <b>Telegram:</b> {tg_user_str}\n"
+        f"🔢 <b>Chat ID:</b> <code>{chat_id}</code>\n"
+        f"🕒 <b>Vaqt:</b> {now_str}\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    )
+    if text:
+        admin_caption += f"💬 <b>Xabar matni:</b>\n{text}\n"
+    else:
+        admin_caption += "📎 <i>(Foydalanuvchi media fayl biriktirdi)</i>\n"
+
+    profile_url = f"https://t.me/{tg_username}" if tg_username else f"tg://user?id={chat_id}"
+    admin_kb = {
+        "inline_keyboard": [
+            [
+                {"text": "✍️ Javob yozish", "callback_data": f"reply_user_{chat_id}"},
+                {"text": "👤 Telegram profili", "url": profile_url}
+            ]
+        ]
+    }
+
+    photo = message.get("photo")
+    document = message.get("document")
+    voice = message.get("voice")
+    audio = message.get("audio")
+    video_note = message.get("video_note")
+
+    target_admin_ids = {OWNER_ADMIN_CHAT_ID}
+    try:
+        from admin_bot import get_all_authenticated_admin_chat_ids
+        for aid in get_all_authenticated_admin_chat_ids():
+            target_admin_ids.add(aid)
+    except Exception:
+        pass
+
+    for a_id in target_admin_ids:
+        try:
+            if photo:
+                send_photo(a_id, photo[-1]["file_id"], caption=admin_caption, reply_markup=admin_kb)
+            elif document:
+                send_document(a_id, document["file_id"], caption=admin_caption, reply_markup=admin_kb)
+            elif voice:
+                tg_request("sendVoice", {"chat_id": a_id, "voice": voice["file_id"], "caption": admin_caption, "parse_mode": "HTML", "reply_markup": admin_kb})
+            elif audio:
+                tg_request("sendAudio", {"chat_id": a_id, "audio": audio["file_id"], "caption": admin_caption, "parse_mode": "HTML", "reply_markup": admin_kb})
+            elif video_note:
+                tg_request("sendVideoNote", {"chat_id": a_id, "video_note": video_note["file_id"]})
+                send_message(a_id, admin_caption, reply_markup=admin_kb)
+            else:
+                send_message(a_id, admin_caption, reply_markup=admin_kb)
+        except Exception as e:
+            logging.error(f"Error forwarding feedback to admin {a_id}: {e}")
+
+    try:
+        from admin_bot import notify_admins_of_feedback
+        notify_admins_of_feedback({
+            "chat_id": chat_id,
+            "full_name": eb_name,
+            "username": eb_login,
+            "tg_user_str": tg_user_str,
+            "text": text,
+            "photo": photo[-1]["file_id"] if photo else None,
+            "document": document["file_id"] if document else None
+        })
+    except Exception as e:
+        logging.debug(f"Admin bot feedback forwarding note: {e}")
+
+    user_states.pop(chat_id, None)
+
+    user_lang = (db_user.get("lang") if db_user else None) or "uz"
+    conf_msg = {
+        "ru": (
+            "✅ <b>Ваше обращение успешно отправлено администратору!</b>\n\n"
+            "Спасибо за отзыв и содействие! Администрация рассмотрит ваше обращение в кратчайшие сроки.\n\n"
+            "При необходимости вы можете написать администратору лично:\n"
+            "👉 @Asoee1"
+        ),
+        "en": (
+            "✅ <b>Your message has been successfully delivered to the admin!</b>\n\n"
+            "Thank you for your valuable feedback! We will review it shortly.\n\n"
+            "You can also reach out to the admin directly on Telegram:\n"
+            "👉 @Asoee1"
+        ),
+        "uz": (
+            "✅ <b>Murojaatingiz adminga muvaffaqiyatli yetkazildi!</b>\n\n"
+            "Taklif yoki fikr-mulohazangiz uchun katta rahmat! Platforma ma'muriyati xabaringizni tez orada ko'rib chiqadi.\n\n"
+            "Zarur hollarda adminning shaxsiy profiliga ham bevosita yozishingiz mumkin:\n"
+            "👉 @Asoee1"
+        )
+    }.get(user_lang, "uz")
+
+    direct_kb = {
+        "inline_keyboard": [
+            [{"text": "👤 Admin lichkasi (@Asoee1)", "url": ADMIN_DIRECT_URL}]
+        ]
+    }
+    send_message(chat_id, conf_msg, reply_markup=direct_kb)
+    send_message(chat_id, "Bosh menyudasiz:", reply_markup=get_main_keyboard(user_lang))
+
 # ----------------- MESSAGE HANDLERS -----------------
 
 def handle_message(message):
@@ -852,14 +1029,9 @@ def handle_message(message):
     user_lang = (user.get("lang") if user else None) or chat_lang_cache.get(chat_id) or "uz"
     user_main_kb = get_main_keyboard(user_lang)
 
-    # Check for incoming payment receipt (photo or document)
-    photo = message.get("photo")
-    document = message.get("document")
-    if photo or document:
-        file_id = photo[-1]["file_id"] if photo else document["file_id"]
-        file_type = "photo" if photo else "document"
-        handle_payment_receipt(message, file_id, file_type, user)
-        return
+    # Check active state
+    state_info = user_states.get(chat_id)
+    cur_state = state_info.get("state") if state_info else None
 
     # Cancel command / button
     if text in ("/cancel", "/bekor", "❌ Bekor qilish", "❌ Отмена", "❌ Cancel"):
@@ -871,6 +1043,74 @@ def handle_message(message):
             "uz": "Amal bekor qilindi. Bosh menyudasiz:"
         }.get(user_lang, "Amal bekor qilindi. Bosh menyudasiz:")
         send_message(chat_id, cancel_msg, reply_markup=user_main_kb)
+        return
+
+    # Feedback state handler
+    if cur_state == "WAITING_FEEDBACK":
+        handle_user_feedback(message, user)
+        return
+
+    # Admin reply state handler
+    if cur_state == "ADMIN_WAITING_REPLY":
+        target_chat_id = state_info.get("data", {}).get("target_chat_id")
+        user_states.pop(chat_id, None)
+        if target_chat_id and text:
+            reply_to_user = (
+                f"📩 <b>Administrator javobi:</b>\n\n"
+                f"{text}\n\n"
+                f"<i>Admin bilan bog'lanish: @Asoee1</i>"
+            )
+            res = send_message(
+                target_chat_id,
+                reply_to_user,
+                reply_markup={
+                    "inline_keyboard": [
+                        [{"text": "👤 Admin lichkasi (@Asoee1)", "url": ADMIN_DIRECT_URL}]
+                    ]
+                }
+            )
+            if res and res.get("ok"):
+                send_message(chat_id, f"✅ Foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) javobingiz muvaffaqiyatli yetkazildi!", reply_markup=user_main_kb)
+            else:
+                send_message(chat_id, f"❌ Foydalanuvchiga xabar yuborib bo'lmadi (ehtimol botni to'xtatgan).", reply_markup=user_main_kb)
+        return
+
+    # Admin quick reply command: /reply <chat_id> <matn> or /javob <chat_id> <matn>
+    if (chat_id == OWNER_ADMIN_CHAT_ID or is_admin_chat(chat_id)) and (text.startswith("/reply") or text.startswith("/javob")):
+        parts = text.split(maxsplit=2)
+        if len(parts) >= 3 and parts[1].strip().isdigit():
+            target_chat_id = int(parts[1].strip())
+            reply_body = parts[2].strip()
+            reply_text = (
+                f"📩 <b>Administrator javobi:</b>\n\n"
+                f"{reply_body}\n\n"
+                f"<i>Admin bilan bog'lanish: @Asoee1</i>"
+            )
+            res = send_message(
+                target_chat_id,
+                reply_text,
+                reply_markup={
+                    "inline_keyboard": [
+                        [{"text": "👤 Admin lichkasi (@Asoee1)", "url": ADMIN_DIRECT_URL}]
+                    ]
+                }
+            )
+            if res and res.get("ok"):
+                send_message(chat_id, f"✅ Javob foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) muvaffaqiyatli yetkazildi!")
+            else:
+                send_message(chat_id, f"❌ Foydalanuvchiga xabar yuborib bo'lmadi.")
+            return
+        else:
+            send_message(chat_id, "⚠️ Foydalanish: <code>/reply [chat_id] [javob matni]</code>\nMasalan:\n<code>/reply 12345678 Assalomu alaykum, taklifingiz qabul qilindi!</code>")
+            return
+
+    # Check for incoming payment receipt (photo or document)
+    photo = message.get("photo")
+    document = message.get("document")
+    if photo or document:
+        file_id = photo[-1]["file_id"] if photo else document["file_id"]
+        file_type = "photo" if photo else "document"
+        handle_payment_receipt(message, file_id, file_type, user)
         return
 
     # Telegram Mini App commands & buttons
@@ -926,6 +1166,51 @@ def handle_message(message):
                 ]
             }
         )
+        return
+
+    # Feedback / Adminga murojaat trigger
+    is_feedback_cmd = (
+        text in (
+            "✍️ Adminga murojaat", "✍️ Связь с админом", "✍️ Contact Admin",
+            "/murojaat", "/feedback", "/support", "/boglanish"
+        ) or
+        text == "/admin" or
+        t_lower in ("adminga murojaat", "murojaat", "taklif", "shikoyat", "adminga yozish")
+    )
+    if is_feedback_cmd:
+        user_states[chat_id] = {"state": "WAITING_FEEDBACK", "data": {}}
+        prompt_txt = {
+            "ru": (
+                "✍️ <b>Связь с администратором / Предложения и жалобы</b>\n\n"
+                "Уважаемый пользователь! Если у вас есть предложения по улучшению EduBattle, замечания или возникли вопросы, вы можете:\n\n"
+                "1️⃣ <b>Написать в бот:</b> Отправьте сообщение (текст, скриншот или аудио) прямо сюда. Мы сразу передадим его администратору платформы.\n\n"
+                "2️⃣ <b>Написать лично администратору:</b> Нажмите кнопку ниже, чтобы написать в личные сообщения (@Asoee1).\n\n"
+                "<i>Ждём вашего сообщения (для отмены нажмите ❌ Отмена):</i>"
+            ),
+            "en": (
+                "✍️ <b>Contact Admin / Feedback & Suggestions</b>\n\n"
+                "Dear user! If you have suggestions, questions, or issues regarding EduBattle, you can:\n\n"
+                "1️⃣ <b>Send via Bot:</b> Type your message (text, screenshot, or audio) right here. It will be sent to the admin immediately.\n\n"
+                "2️⃣ <b>Direct Message:</b> Click the button below to message the admin directly on Telegram (@Asoee1).\n\n"
+                "<i>Please type your message (or press ❌ Cancel):</i>"
+            ),
+            "uz": (
+                "✍️ <b>Adminga murojaat / Taklif va shikoyatlar</b>\n\n"
+                "Hurmatli foydalanuvchi! EduBattle platformasi bo'yicha har qanday savol, taklif yoki shikoyatingiz bo'lsa, quyidagi usullar orqali murojaat qilishingiz mumkin:\n\n"
+                "1️⃣ <b>Bot orqali yuborish:</b> Xabaringizni (matn, rasm yoki ovozli xabar) shu yerga yozing — xabaringiz darhol platforma ma'muriyatiga yetkaziladi.\n\n"
+                "2️⃣ <b>Admin lichkasiga yozish:</b> Quyidagi tugma orqali bevosita adminning shaxsiy profiliga (@Asoee1) yozishingiz mumkin.\n\n"
+                "<i>Xabaringizni yozib yuboring (bekor qilish uchun ❌ Bekor qilish tugmasini bosing):</i>"
+            )
+        }.get(user_lang, "uz")
+
+        direct_kb = {
+            "inline_keyboard": [
+                [{"text": "👤 Admin lichkasiga yozish (@Asoee1)", "url": ADMIN_DIRECT_URL}],
+                [{"text": "❌ Bekor qilish", "callback_data": "cancel_feedback"}]
+            ]
+        }
+        send_message(chat_id, prompt_txt, reply_markup=direct_kb)
+        send_message(chat_id, "✍️ Xabaringizni yozing:", reply_markup=CANCEL_KEYBOARD)
         return
 
     # Strictly redirect all admin commands from User Bot to dedicated Admin Bot
@@ -1007,6 +1292,7 @@ def handle_message(message):
                     f"Через этот бот вы можете:\n"
                     f"🚀 <b>Открыть EduBattle</b> — Запустить приложение прямо внутри Telegram.\n"
                     f"💎 <b>PRO подписка</b> — Оформить премиум подписку со скидкой.\n"
+                    f"✍️ <b>Связь с админом</b> — Задать вопрос или написать отзыв администратору.\n"
                     f"🔑 <b>Код подтверждения (OTP)</b> — Безопасный код для входа и регистрации.\n"
                     f"🔐 <b>Сброс пароля</b> — Восстановить доступ в 1 клик.\n\n"
                     f"🌐 Сменить язык: нажмите <b>'Сменить язык'</b> или отправьте /lang.\n\n"
@@ -1021,6 +1307,7 @@ def handle_message(message):
                     f"With this bot you can:\n"
                     f"🚀 <b>Launch EduBattle</b> — Open the app directly in Telegram.\n"
                     f"💎 <b>PRO Subscription</b> — Upgrade to PRO with full privileges.\n"
+                    f"✍️ <b>Contact Admin</b> — Send feedback or questions to admin.\n"
                     f"🔑 <b>OTP Code</b> — Receive secure instant verification codes.\n"
                     f"🔐 <b>Password Reset</b> — Quickly reset your password.\n\n"
                     f"🌐 Change language: press <b>'Change Language'</b> or send /lang.\n\n"
@@ -1034,8 +1321,9 @@ def handle_message(message):
                     f"📱 <b>Ilova to'g'ridan-to'g'ri Telegram ichida 24/7 ishlaydi!</b>\n"
                     f"Hech qanday fayl yuklab olish shart emas — <b>iOS (iPhone/iPad)</b> va <b>Android</b> qurilmalarida birdek mukammal ochiladi.\n\n"
                     f"Ushbu bot orqali siz:\n"
-                    f"🚀 <b>EduBattle Ilovasi</b> — Ilovani to'g'ridan-to'g'ri Telegramda ochish (barcha testlar, baholar va darsliklar ilova ichida).\n"
+                    f"🚀 <b>EduBattle Ilovasi</b> — Ilovani to'g'ridan-to'g'ri Telegramda ochish.\n"
                     f"💎 <b>PRO Obuna</b> — Cheklovsiz imkoniyatlar uchun PRO tarifini xarid qilish.\n"
+                    f"✍️ <b>Adminga murojaat</b> — Taklif, fikr va savollar yuborish yoki admin bilan bog'lanish.\n"
                     f"🔑 <b>Tasdiqlash kodi (OTP)</b> — Ro'yxatdan o'tish yoki kirish uchun xavfsiz kod olish.\n"
                     f"🔐 <b>Parolni tiklash</b> — Parolingizni unutgan bo'lsangiz, uni darhol tiklash.\n\n"
                     f"🌐 Tilni o'zgartirish uchun <b>'Tilni tanlash'</b> tugmasini bosing yoki /lang deb yozing.\n\n"
@@ -1458,6 +1746,30 @@ def handle_callback_query(callback_query):
 
     if not chat_id:
         answer_callback_query(cq_id)
+        return
+
+    # Admin reply callback button
+    if data.startswith("reply_user_"):
+        target_chat_id = data.replace("reply_user_", "").strip()
+        user_states[chat_id] = {
+            "state": "ADMIN_WAITING_REPLY",
+            "data": {"target_chat_id": int(target_chat_id)}
+        }
+        answer_callback_query(cq_id, "Javob yozish rejimi faollashdi")
+        send_message(
+            chat_id,
+            f"✍️ <b>Foydalanuvchiga (Chat ID: <code>{target_chat_id}</code>) javob yozish:</b>\n\n"
+            f"Quyida javob matnini yozib yuboring. Xabar EduBattle nomidan foydalanuvchiga yetkaziladi.\n\n"
+            f"<i>(Bekor qilish uchun: ❌ Bekor qilish yoki /cancel)</i>",
+            reply_markup=CANCEL_KEYBOARD
+        )
+        return
+
+    # Cancel feedback callback
+    if data == "cancel_feedback":
+        user_states.pop(chat_id, None)
+        answer_callback_query(cq_id, "Bekor qilindi")
+        send_message(chat_id, "Amal bekor qilindi. Bosh menyudasiz:", reply_markup=get_main_keyboard())
         return
 
     # Language change callback
