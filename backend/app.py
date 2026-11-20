@@ -239,6 +239,65 @@ def api_setup_webhooks():
         "admin_url": wh_admin
     }
 
+# ----------------- RASH YORDAMCHI TELEGRAM BOT (WEBHOOK INTEGRATION) -----------------
+@app.on_event("startup")
+async def on_rash_bot_startup():
+    try:
+        repo_root = str(Path(__file__).resolve().parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from rash_bot.webhook import init_rash_bot
+        render_url = (os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com").rstrip("/")
+        res = await init_rash_bot(render_url)
+        print(f"[RashBot] Startup result: {res}")
+    except Exception as e:
+        print(f"[RashBot] Startup skipped/error: {e}")
+
+@app.on_event("shutdown")
+async def on_rash_bot_shutdown():
+    try:
+        from rash_bot.webhook import shutdown_rash_bot
+        await shutdown_rash_bot()
+    except Exception:
+        pass
+
+@app.post("/api/rash-telegram-webhook")
+async def rash_telegram_webhook(request: Request):
+    try:
+        update = await request.json()
+        repo_root = str(Path(__file__).resolve().parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from rash_bot.webhook import handle_rash_webhook
+        render_url = (os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com").rstrip("/")
+        return await handle_rash_webhook(update, render_url)
+    except Exception as e:
+        print(f"[RashBot] Webhook error: {e}")
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/rash-status")
+async def api_rash_status():
+    try:
+        repo_root = str(Path(__file__).resolve().parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from rash_bot.webhook import get_rash_status
+        return get_rash_status()
+    except Exception as e:
+        return {"configured": False, "initialized": False, "error": str(e)}
+
+@app.get("/api/rash-setup-webhook")
+async def api_rash_setup_webhook():
+    try:
+        repo_root = str(Path(__file__).resolve().parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from rash_bot.webhook import init_rash_bot
+        render_url = (os.environ.get("RENDER_EXTERNAL_URL") or "https://edubattle-backend-x0v2.onrender.com").rstrip("/")
+        return await init_rash_bot(render_url)
+    except Exception as e:
+        return {"configured": False, "initialized": False, "error": str(e)}
+
 # ----------------- SECURITY & NO-CACHE HEADERS MIDDLEWARE -----------------
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
