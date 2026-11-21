@@ -23,6 +23,14 @@ CYRILLIC_TO_LATIN_CHOICES = str.maketrans(
 
 ALLOWED_CLOSED_LETTERS = set("ABCDEFGH")
 
+# All apostrophe / modifier / backtick variants used on Uzbek keyboards (iOS, Android, Windows)
+UZBEK_APOSTROPHE_RE = re.compile(r"['‘’ʻʼ`´′ʹˈ‛ˊ]")
+
+# Matches a line consisting strictly of numbered closed choices (e.g. "1a2b3c", "1. A 2) B 3-C")
+PURE_NUMBERED_CLOSED_RE = re.compile(
+    r"^(?:\d{1,3}\s*[.)\-–—]?\s*[A-Ha-hАаВвСсДдЕеФф][\s,;]*)+$"
+)
+
 
 class ParseError(ValueError):
     """Raised when an answer key or student submission cannot be parsed."""
@@ -53,8 +61,14 @@ def _normalize_closed_letter(ch: str) -> str:
 
 
 def normalize_open_answer(raw: str) -> str:
-    """Normalize open-ended answer for fair comparison (case, spaces, decimal comma)."""
-    text = raw.strip().lower()
+    """
+    Normalize open-ended answer for fair comparison:
+    - case-insensitive
+    - normalizes all Uzbek apostrophe/modifier variants (' ‘ ’ ʻ ʼ ` ´ ′) to ASCII '
+    - collapses whitespace
+    - normalizes numbers (e.g. "12,50" -> "12.5", "+5" -> "5", "-0" -> "0")
+    """
+    text = UZBEK_APOSTROPHE_RE.sub("'", raw.strip().lower())
     text = re.sub(r"\s+", " ", text)
     if not text:
         return ""
@@ -72,78 +86,126 @@ def normalize_open_answer(raw: str) -> str:
     return text
 
 
+def _add_open_entry(open_map: dict[int, str], num: int, val: str) -> None:
+    if num in open_map:
+        raise ParseError(f"{num}-savol kaliti ikki marta kiritilgan.")
+    open_map[num] = val
+
+
 def _extract_numbered_open_entries(text: str) -> tuple[dict[int, str], str]:
     """
-    Extract explicit open entries like:
-      36: 12.5
+    Extract explicit open entries supporting Uzbek words, apostrophes, and flexible separators:
+      36: O'zbekiston
       37 = 42|42.0
-      38) Toshkent
+      38) G'afur G'ulom
+      39. Qo'qon
+      40-Ma'naviyat
+      41 Bo'stonliq
+      abcd 5: O'zbekiston 6: G'alla
+      36: O'zbekiston; 37: Toshkent
     Returns (open_map, remaining_text).
     """
     open_map: dict[int, str] = {}
     remaining_lines: list[str] = []
 
-    # Process line by line so multi-word open answers stay intact.
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
 
-        # Check if the whole line is one or more `num: value` / `num=value` entries
-        # First check single-line open entry: e.g. "36: 12.5" or "36=42|42.0" or "36) -3.5"
-        m_full = re.fullmatch(r"(\d{1,3})\s*[:=]\s*(.+)", line)
-        if m_full:
-            num = int(m_full.group(1))
-            val = m_full.group(2).strip()
-            if num in open_map:
-                raise ParseError(f"{num}-savol kaliti ikki marta kiritilgan.")
-            open_map[num] = val
+        # 1. Pure numbered closed line (e.g. "1a2b3c", "1.A 2)B 3-C") -> keep for closed parser
+        if PURE_NUMBERED_CLOSED_RE.fullmatch(line):
+            remaining_lines.append(line)
             continue
 
-        # Check semicolon-separated entries like "36:12.5; 37:42"
-        if ";" in line and re.search(r"\d{1,3}\s*[:=]", line):
+        # 2. Semicolon-separated open entries (e.g. "36: O'zbekiston; 37: G'alla")
+        if ";" in line:
             parts = [p.strip() for p in line.split(";") if p.strip()]
-            all_matched = True
             parsed_parts: list[tuple[int, str]] = []
+            all_matched = True
             for part in parts:
-                m_part = re.fullmatch(r"(\d{1,3})\s*[:=]\s*(.+)", part)
+                m_part = re.fullmatch(r"(\d{1,3})\s*(?:[:=.)\-–—]|\s)\s*(.+)", part)
                 if not m_part:
                     all_matched = False
                     break
                 parsed_parts.append((int(m_part.group(1)), m_part.group(2).strip()))
-            if all_matched:
+            if all_matched and parsed_parts:
                 for num, val in parsed_parts:
-                    if num in open_map:
-                        raise ParseError(f"{num}-savol kaliti ikki marta kiritilgan.")
-                    open_map[num] = val
+                    _add_open_entry(open_map, num, val)
                 continue
 
-        # Check inline mixed line like "abcd 5:12.5 6:42" or "1a2b 3:15 4:20"
-        inline_tokens = list(re.finditer(r"(?:^|\s)(\d{1,3})\s*[:=]\s*([^\s;]+)", line))
-        if inline_tokens:
-            first_start = inline_tokens[0].start()
-            prefix = line[:first_start].strip()
+        # 3. One or more `num: value` / `num=value` entries (optionally after a closed prefix)
+        colon_matches = list(re.finditer(r"(?:^|\s)(\d{1,3})\s*[:=]\s*", line))
+        if colon_matches:
+            # Keep only strictly increasing question numbers with non-empty values
+            # so answers like "36: 12:30" or "36: 1:2" are never falsely split.
+            selected = [colon_matches[0]]
+            for cand in colon_matches[1:]:
+                prev = selected[-1]
+                prev_num = int(prev.group(1))
+                cand_num = int(cand.group(1))
+                between = line[prev.end() : cand.start()].strip()
+                if cand_num > prev_num and between:
+                    selected.append(cand)
+
+            prefix = line[: selected[0].start()].strip()
             if prefix:
                 remaining_lines.append(prefix)
-            for tok in inline_tokens:
-                num = int(tok.group(1))
-                val = tok.group(2).strip()
-                if num in open_map:
-                    raise ParseError(f"{num}-savol kaliti ikki marta kiritilgan.")
-                open_map[num] = val
+            for idx, m in enumerate(selected):
+                num = int(m.group(1))
+                val_start = m.end()
+                val_end = (
+                    selected[idx + 1].start()
+                    if idx + 1 < len(selected)
+                    else len(line)
+                )
+                val = line[val_start:val_end].strip().rstrip(";")
+                if not val:
+                    raise ParseError(f"{num}-savol javobi bo'sh qoldirilgan.")
+                _add_open_entry(open_map, num, val)
             continue
 
-        # Check "36) 12.5" where value is NOT a single closed letter A-H
-        m_paren = re.fullmatch(r"(\d{1,3})\s*[.)]\s*(.+)", line)
-        if m_paren:
-            num = int(m_paren.group(1))
-            val = m_paren.group(2).strip()
-            norm_letter = _normalize_closed_letter(val)
-            if not (len(norm_letter) == 1 and norm_letter in ALLOWED_CLOSED_LETTERS):
-                if num in open_map:
-                    raise ParseError(f"{num}-savol kaliti ikki marta kiritilgan.")
-                open_map[num] = val
+        # 4. Multiple `num) val` / `num. val` / `num-val` entries on one line
+        #    (requires same delimiter and strictly increasing numbers so "36) 1-sentabr" stays intact)
+        delim_matches = list(re.finditer(r"(?:^|\s)(\d{1,3})\s*([.)\-–—])\s*", line))
+        if len(delim_matches) >= 2:
+            selected_d = [delim_matches[0]]
+            first_delim = delim_matches[0].group(2)
+            for cand in delim_matches[1:]:
+                prev = selected_d[-1]
+                between = line[prev.end() : cand.start()].strip()
+                if (
+                    cand.group(2) == first_delim
+                    and int(cand.group(1)) > int(prev.group(1))
+                    and between
+                ):
+                    selected_d.append(cand)
+            if len(selected_d) >= 2:
+                prefix = line[: selected_d[0].start()].strip()
+                if prefix:
+                    remaining_lines.append(prefix)
+                for idx, m in enumerate(selected_d):
+                    num = int(m.group(1))
+                    val_start = m.end()
+                    val_end = (
+                        selected_d[idx + 1].start()
+                        if idx + 1 < len(selected_d)
+                        else len(line)
+                    )
+                    val = line[val_start:val_end].strip().rstrip(",;")
+                    if not val:
+                        raise ParseError(f"{num}-savol javobi bo'sh qoldirilgan.")
+                    _add_open_entry(open_map, num, val)
                 continue
+
+        # 5. Single-line numbered open entry: "36) O'zbekiston", "36. O'zbekiston",
+        #    "36-O'zbekiston", "36 - O'zbekiston", "36 O'zbekiston"
+        m_single = re.fullmatch(r"(\d{1,3})\s*(?:[.)\-–—]|\s)\s*(.+)", line)
+        if m_single:
+            num = int(m_single.group(1))
+            val = m_single.group(2).strip()
+            _add_open_entry(open_map, num, val)
+            continue
 
         remaining_lines.append(line)
 
@@ -162,14 +224,14 @@ def _parse_closed_block(text: str) -> dict[int, str]:
 
     # Try numbered closed format if digits are present
     if any(ch.isdigit() for ch in cleaned):
-        pairs = re.findall(r"(\d{1,3})\s*[.):\-]?\s*([A-Za-z])", cleaned)
+        pairs = re.findall(r"(\d{1,3})\s*[.):\-–—]?\s*([A-Za-z])", cleaned)
         # Ensure we didn't leave behind stray garbage tokens
-        reconstructed = re.sub(r"(\d{1,3})\s*[.):\-]?\s*([A-Za-z])", "", cleaned)
+        reconstructed = re.sub(r"(\d{1,3})\s*[.):\-–—]?\s*([A-Za-z])", "", cleaned)
         reconstructed = re.sub(r"[\s,;]+", "", reconstructed)
         if reconstructed:
             raise ParseError(
                 f"Yopiq javoblar formatida tushunarsiz belgi bor: «{reconstructed[:20]}».\n"
-                "Namuna: `abcd...` yoki `1a2b3c...` (ochiq savollar uchun `36: 12.5`)."
+                "Namuna: `abcd...` yoki `1a2b3c...` (ochiq savollar uchun `36: O'zbekiston`)."
             )
         result: dict[int, str] = {}
         for num_str, letter in pairs:
@@ -192,7 +254,7 @@ def _parse_closed_block(text: str) -> dict[int, str]:
     if invalid:
         raise ParseError(
             f"Yopiq javoblarda ruxsat etilmagan belgi topildi: «{invalid[0]}».\n"
-            "Faqat A-H harflarini kiriting (ochiq savollar uchun `36: javob` yozing)."
+            "Faqat A-H harflarini kiriting (ochiq savollar uchun `36: O'zbekiston` ko'rinishida raqam bilan yozing)."
         )
     return {idx + 1: ch for idx, ch in enumerate(letters_only)}
 
@@ -263,7 +325,7 @@ def split_code_and_answers(raw_text: str) -> tuple[str, str] | None:
     """
     Split a quick-submit message like:
       1001*abcdabcd...
-      1001*1a2b3c\n36: 12.5
+      1001*1a2b3c\n36: O'zbekiston
       1001#abcd...
     Returns (code, answers_body) or None if not matching quick format.
     """
@@ -293,6 +355,14 @@ def parse_student_answers(
     open_num_set = {q.number for q in open_specs}
 
     open_raw, closed_text = _extract_numbered_open_entries(text)
+
+    # Support unnumbered submission for open-only tests (e.g. sending "O'zbekiston" directly)
+    if not closed_nums and not open_raw and closed_text:
+        lines = [ln.strip() for ln in closed_text.splitlines() if ln.strip()]
+        if len(open_specs) == 1:
+            return {open_specs[0].number: closed_text.strip()}
+        if len(lines) == len(open_specs):
+            return {q.number: ln for q, ln in zip(open_specs, lines)}
 
     # Validate open numbers exist in test
     unknown_open = [n for n in open_raw if n not in open_num_set]
@@ -366,7 +436,8 @@ def grade_submission(
             is_correct = _normalize_closed_letter(ans) in q.accepted
         else:
             norm = normalize_open_answer(ans)
-            is_correct = bool(norm) and norm in q.accepted
+            normalized_accepted = {normalize_open_answer(a) for a in q.accepted}
+            is_correct = bool(norm) and norm in normalized_accepted
 
         if is_correct:
             binary_vector.append(1)
