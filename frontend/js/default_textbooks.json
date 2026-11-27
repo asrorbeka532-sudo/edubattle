@@ -440,5 +440,269 @@
         "summary": "Mavzuni to'liq takrorlash va testlarga tayyorgarlik."
       }
     ]
+  },
+  {
+    "id": 30,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "6-Sinf Rus tili (Yangi tahrir)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "6-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "6-sinf-rus-tili-yangi-tahrir",
+    "summary": "6-sinf uchun yangi tahrirdagi Rus tili darsligi: Fonetika, urg'u, otlarning jinsi va soni, sifatlar, asosiy kundalik muloqot va leksika.",
+    "chapters": [
+      {
+        "title": "1-bob. Fonetika, grafika va urg'u (Фонетика и ударение)",
+        "summary": "Unli va undosh tovushlar, qattiq va yumshoq undoshlar, ЖИ-ШИ, ЧА-ЩА, ЧУ-ЩУ imlo qoidalari.",
+        "key_rules": [
+          "ЖИ-ШИ har doim И bilan yoziladi",
+          "ЧА-ЩА har doim А bilan yoziladi",
+          "ЧУ-ЩУ har doim У bilan yoziladi"
+        ]
+      },
+      {
+        "title": "2-bob. Otlarning jinsi (Род имён существительных)",
+        "summary": "Мужской, женский va средний rod otlarini qo'shimchalar orqali aniqlash hamda istisno so'zlar.",
+        "key_rules": [
+          "Undosh bilan tugagan otlar — мужской род",
+          "-а/-я bilan tugaganlar — женский род",
+          "-о/-е/-мя bilan tugaganlar — средний род"
+        ]
+      },
+      {
+        "title": "3-bob. Otlarning ko'plik shakli (Множественное число)",
+        "summary": "Ko'plik qo'shimchalari (-ы, -и, -а, -я) hamda maxsus o'zgaruvchi otlar (человек — люди, ребёнок — дети).",
+        "key_rules": [
+          "Г, К, Х, Ж, Ш, Щ, Ч dan keyin -и yoziladi",
+          "дом → дома, город → города, друг → друзья"
+        ]
+      },
+      {
+        "title": "4-bob. Sifatlar va olmoshlar (Прилагательные и местоимения)",
+        "summary": "Sifatlarning ot bilan jins va sonda moslashuvi, kishilik va egalik olmoshlari (мой, моя, моё, мои).",
+        "key_rules": [
+          "Какой? — новый (-ый/-ий/-ой)",
+          "Какая? — новая (-ая/-яя)",
+          "Какое? — новое (-ое/-ее)"
+        ]
+      },
+      {
+        "title": "5-bob. Oila, maktab va kundalik muloqot (Семья и школа)",
+        "summary": "Salomlashish, tanishish, kun tartibi, sevimli mashg'ulotlar va odobli murojaat iboralari.",
+        "key_rules": [
+          "Здравствуйте! / Доброе утро!",
+          "Меня зовут... / Очень приятно!"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "7-Sinf Rus tili (Yangi tahrir)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "7-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "7-sinf-rus-tili-yangi-tahrir",
+    "summary": "7-sinf uchun yangi tahrirdagi Rus tili darsligi: 6 ta kelishik (padej) tizimi, fe'llarning I va II tuslanishi, zamonlar va predloglar.",
+    "chapters": [
+      {
+        "title": "1-bob. Bosh va Qaratqich kelishigi (Именительный и Родительный падежи)",
+        "summary": "Кто? Что? va Кого? Чего? so'roqlari, нет/без/у/из/от/до predloglari bilan qo'llanilishi.",
+        "key_rules": [
+          "Родительный: нет времени, у друга, из школы",
+          "2, 3, 4 sonlaridan keyin birlik Roditelniy keladi"
+        ]
+      },
+      {
+        "title": "2-bob. Jo'nalish va Tushum kelishigi (Дательный и Винительный падежи)",
+        "summary": "Кому? Чему? (к, по) va Кого? Что? (в, на, через) kelishiklari hamda yo'nalish ifodalash.",
+        "key_rules": [
+          "Дательный: помочь другу, идти к врачу",
+          "Винительный: читать книгу, идти в школу"
+        ]
+      },
+      {
+        "title": "3-bob. Chog'ishtirma va O'rin-payt kelishigi (Творительный и Предложный падежи)",
+        "summary": "Кем? Чем? (с, над, под, перед, за) va О ком? О чём? Где? (в, на, о/об) padejlari.",
+        "key_rules": [
+          "Творительный: писать ручкой, стать врачом",
+          "Предложный: учиться в школе, думать о будущем"
+        ]
+      },
+      {
+        "title": "4-bob. Fe'l tuslanishi va zamonlar (Спряжение и время глаголов)",
+        "summary": "I va II tuslanish fe'llari, o'tgan zamonning jins qo'shimchalari (-л, -ла, -ло, -ли) va kelasi zamon.",
+        "key_rules": [
+          "I tuslanish: -у/-ю, -ешь, -ет, -ем, -ете, -ут/-ют",
+          "II tuslanish: -у/-ю, -ишь, -ит, -им, -ите, -ат/-ят"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "8-Sinf Rus tili (Yangi tahrir)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "8-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "8-sinf-rus-tili-yangi-tahrir",
+    "summary": "8-sinf uchun yangi tahrirdagi Rus tili darsligi: Fe'l turlari (вид глагола), harakat fe'llari, ravishlar, sonlar va so'z yasalishi.",
+    "chapters": [
+      {
+        "title": "1-bob. Tugallangan va tugallanmagan fe'l (Совершенный и несовершенный вид)",
+        "summary": "Что делать? (НСВ) va Что сделать? (СВ) fe'l juftliklari va ularning nutqda to'g'ri ishlatilishi.",
+        "key_rules": [
+          "НСВ: делать, писать, читать, говорить",
+          "СВ: сделать, написать, прочитать, сказать"
+        ]
+      },
+      {
+        "title": "2-bob. Harakat fe'llari (Глаголы движения)",
+        "summary": "Идти — ходить, ехать — ездить, бежать — бегать, лететь — летать va old qo'shimchali (при-, у-, вы-, за-) shakllar.",
+        "key_rules": [
+          "Идти — bir yo'nalishda (hozir)",
+          "Ходить — muntazam yoki borib-kelish"
+        ]
+      },
+      {
+        "title": "3-bob. Sifat darajalari va ravishlar (Степени сравнения и наречия)",
+        "summary": "Qiyosiy va orttirma daraja (быстрее, самый красивый, лучше, хуже) hamda ravishlarning imlosi.",
+        "key_rules": [
+          "хороший → лучше",
+          "плохой → хуже",
+          "маленький → меньше"
+        ]
+      },
+      {
+        "title": "4-bob. Sonlar va vaqtni ifodalash (Числительные и время)",
+        "summary": "Sanoq va tartib sonlar, soat va sanani rus tilida to'g'ri aytish qoidalari.",
+        "key_rules": [
+          "1 час, 2-4 часа, 5-20 часов",
+          "Который час? — Сейчас ровно девять часов."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "9-Sinf Rus tili (Yangi tahrir)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "9-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "9-sinf-rus-tili-yangi-tahrir",
+    "summary": "9-sinf uchun yangi tahrirdagi Rus tili darsligi: Sodda va qo'shma gap sintaksisi, sifatdosh (причастие), ravishdosh (деепричастие) va punktuatsiya.",
+    "chapters": [
+      {
+        "title": "1-bob. Sodda gap va gap bo'laklari (Простое предложение)",
+        "summary": "Ega va kesim, to'ldiruvchi, aniqlovchi va hol; bir tarkibli gap turlari.",
+        "key_rules": [
+          "Подлежащее (ega) — Кто? Что?",
+          "Сказуемое (kesim) — Что делает?"
+        ]
+      },
+      {
+        "title": "2-bob. Sifatdosh va Ravishdosh (Причастие и деепричастие)",
+        "summary": "Faol va majhul sifatdoshlar (-ущ/-ющ, -ащ/-ящ, -вш-, -нн-) hamda ravishdosh oborotida vergul.",
+        "key_rules": [
+          "Деепричастный оборот har doim vergul bilan ajratiladi",
+          "Причастный оборот otdan keyin kelsa vergul qo'yiladi"
+        ]
+      },
+      {
+        "title": "3-bob. Bog'lovchili va bog'lovchisiz qo'shma gaplar (Сложные предложения)",
+        "summary": "Сложносочинённые (и, а, но) va сложноподчинённые (что, чтобы, потому что, который, если) gaplar.",
+        "key_rules": [
+          "чтобы — maqsad ergash gapi",
+          "потому что — sabab ergash gapi",
+          "если — shart ergash gapi"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "10-Sinf Rus tili (Yangi tahrir)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "10-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "10-sinf-rus-tili-yangi-tahrir",
+    "summary": "10-sinf uchun yangi tahrirdagi Rus tili darsligi: Nutq uslublari (стили речи), rasmiy-idoraviy va ilmiy uslub, frazeologizmlar va murakkab orfografiya.",
+    "chapters": [
+      {
+        "title": "1-bob. Nutq uslublari (Функциональные стили речи)",
+        "summary": "So'zlashuv, ilmiy, rasmiy-idoraviy, publitsistik va badiiy uslublarning xususiyatlari.",
+        "key_rules": [
+          "Официально-деловой стиль — ariza, shartnoma, qonun",
+          "Научный стиль — atamalar va aniq mantiq"
+        ]
+      },
+      {
+        "title": "2-bob. Murakkab imlo qoidalari (Сложные случаи орфографии)",
+        "summary": "Н va НН yozilishi, НЕ ning so'z turkumlari bilan qo'shilib yoki ajratib yozilishi, ПРИ-/ПРЕ- old qo'shimchalari.",
+        "key_rules": [
+          "НЕ fe'llar bilan ajratib yoziladi (не знаю, не был)",
+          "ПРИ- — yaqinlashish; ПРЕ- — juda (очень) ma'nosida"
+        ]
+      },
+      {
+        "title": "3-bob. Frazeologizmlar va badiiy vositalar (Фразеология)",
+        "summary": "Rus tilidagi eng mashhur iboralar (бить баклуши, держать язык за зубами, золотые руки) va ularning o'zbekcha muqobili.",
+        "key_rules": [
+          "Золотые руки — qo'li gul usta",
+          "Ни пуха ни пера — omad tilash iborasi"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "subject_id": 10,
+    "subject_name": "Rus tili",
+    "title": "11-Sinf Rus tili (Yangi tahrir — Milliy sertifikat & DTM)",
+    "author": "O'zbekiston Respublikasi Maktabgacha va maktab ta'limi vazirligi (Yangi nashr)",
+    "grade": "11-sinf",
+    "cover_image": null,
+    "file_url": null,
+    "slug": "11-sinf-rus-tili-yangi-tahrir",
+    "summary": "11-sinf uchun yangi tahrirdagi Rus tili darsligi: Akademik yozuv, esse, orfoepiya (to'g'ri urg'u), paronimlar, matn tahlili va imtihonga tayyorgarlik.",
+    "chapters": [
+      {
+        "title": "1-bob. Orfoepiya va to'g'ri urg'u normalari (Орфоэпия)",
+        "summary": "Imtihonlarda eng ko'p uchraydigan urg'u normalari: звони́т, догово́р, катало́г, краси́вее, то́рты, кварта́л.",
+        "key_rules": [
+          "звони́т (o'ng'ay emas: зво́нит xato!)",
+          "краси́вее, догово́р, катало́г, то́рты"
+        ]
+      },
+      {
+        "title": "2-bob. Paronimlar va leksik normalar (Паронимы)",
+        "summary": "Одеть / надеть, адресат / адресант, эффектный / эффективный, дипломат / дипломант farqlari.",
+        "key_rules": [
+          "Одеть кого-то (bolani kiyintirish)",
+          "Надеть что-то (kurtkani kiyish)"
+        ]
+      },
+      {
+        "title": "3-bob. Akademik matn va esse yozish (Академическое письмо)",
+        "summary": "Kirish so'zlar (во-первых, таким образом, следовательно), dalillash va xulosa yozish texnikasi.",
+        "key_rules": [
+          "Вводные слова (конечно, во-первых, к сожалению) har doim vergul bilan ajratiladi"
+        ]
+      }
+    ]
   }
 ]

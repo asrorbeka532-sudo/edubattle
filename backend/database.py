@@ -425,6 +425,21 @@ def init_db():
     except Exception as e:
         print(f"Huquq auto-seed check: {e}")
 
+    # Auto-seed Rus tili (Yangi tahrir) subject, 6 textbooks and 1,173+ Blitz questions
+    try:
+        cursor.execute("SELECT count(*) FROM questions WHERE subject_id = 10;")
+        ru_cnt = cursor.fetchone()
+        if not ru_cnt or ru_cnt[0] < 1000:
+            import sys
+            _bdir = os.path.dirname(os.path.abspath(__file__))
+            if _bdir not in sys.path:
+                sys.path.insert(0, _bdir)
+            from insert_russian_module import insert_all_russian
+            conn.commit()
+            insert_all_russian(DB_PATH)
+    except Exception as e:
+        print(f"Russian auto-seed check: {e}")
+
     # Ensure questions have evenly distributed correct answer choices (A, B, C, D)
     try:
         cursor.execute("SELECT count(*) FROM questions WHERE correct_index = 0;")
