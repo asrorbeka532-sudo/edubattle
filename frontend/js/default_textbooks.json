@@ -451,49 +451,41 @@
     "cover_image": null,
     "file_url": null,
     "slug": "6-sinf-rus-tili-yangi-tahrir",
-    "summary": "6-sinf uchun yangi tahrirdagi Rus tili darsligi: Fonetika, urg'u, otlarning jinsi va soni, sifatlar, asosiy kundalik muloqot va leksika.",
+    "summary": "Учебник русского языка для 6 класса (новое издание): Фонетика, орфография, род и число имён существительных, прилагательные, лексика.",
     "chapters": [
       {
-        "title": "1-bob. Fonetika, grafika va urg'u (Фонетика и ударение)",
-        "summary": "Unli va undosh tovushlar, qattiq va yumshoq undoshlar, ЖИ-ШИ, ЧА-ЩА, ЧУ-ЩУ imlo qoidalari.",
+        "title": "Глава 1. Фонетика, графика и орфография",
+        "summary": "Гласные и согласные звуки, твёрдые и мягкие согласные, правила ЖИ-ШИ, ЧА-ЩА, ЧУ-ЩУ, ЧК-ЧН.",
         "key_rules": [
-          "ЖИ-ШИ har doim И bilan yoziladi",
-          "ЧА-ЩА har doim А bilan yoziladi",
-          "ЧУ-ЩУ har doim У bilan yoziladi"
+          "ЖИ-ШИ пиши с буквой И",
+          "ЧА-ЩА пиши с буквой А",
+          "ЧУ-ЩУ пиши с буквой У"
         ]
       },
       {
-        "title": "2-bob. Otlarning jinsi (Род имён существительных)",
-        "summary": "Мужской, женский va средний rod otlarini qo'shimchalar orqali aniqlash hamda istisno so'zlar.",
+        "title": "Глава 2. Род имён существительных",
+        "summary": "Мужской, женский, средний и общий род существительных, слова на -ь и -мя.",
         "key_rules": [
-          "Undosh bilan tugagan otlar — мужской род",
-          "-а/-я bilan tugaganlar — женский род",
-          "-о/-е/-мя bilan tugaganlar — средний род"
+          "Существительные на согласный — мужской род",
+          "На -а/-я — женский род",
+          "На -о/-е/-мя — средний род"
         ]
       },
       {
-        "title": "3-bob. Otlarning ko'plik shakli (Множественное число)",
-        "summary": "Ko'plik qo'shimchalari (-ы, -и, -а, -я) hamda maxsus o'zgaruvchi otlar (человек — люди, ребёнок — дети).",
+        "title": "Глава 3. Множественное число существительных",
+        "summary": "Окончания -ы/-и, -а/-я и особые формы множественного числа (человек — люди, ребёнок — дети).",
         "key_rules": [
-          "Г, К, Х, Ж, Ш, Щ, Ч dan keyin -и yoziladi",
-          "дом → дома, город → города, друг → друзья"
+          "После г, к, х, ж, ш, щ, ч пишется -и",
+          "дом — дома, город — города, друг — друзья"
         ]
       },
       {
-        "title": "4-bob. Sifatlar va olmoshlar (Прилагательные и местоимения)",
-        "summary": "Sifatlarning ot bilan jins va sonda moslashuvi, kishilik va egalik olmoshlari (мой, моя, моё, мои).",
+        "title": "Глава 4. Имя прилагательное и местоимение",
+        "summary": "Согласование прилагательных с существительными в роде и числе, притяжательные местоимения.",
         "key_rules": [
           "Какой? — новый (-ый/-ий/-ой)",
           "Какая? — новая (-ая/-яя)",
           "Какое? — новое (-ое/-ее)"
-        ]
-      },
-      {
-        "title": "5-bob. Oila, maktab va kundalik muloqot (Семья и школа)",
-        "summary": "Salomlashish, tanishish, kun tartibi, sevimli mashg'ulotlar va odobli murojaat iboralari.",
-        "key_rules": [
-          "Здравствуйте! / Доброе утро!",
-          "Меня зовут... / Очень приятно!"
         ]
       }
     ]
@@ -508,38 +500,37 @@
     "cover_image": null,
     "file_url": null,
     "slug": "7-sinf-rus-tili-yangi-tahrir",
-    "summary": "7-sinf uchun yangi tahrirdagi Rus tili darsligi: 6 ta kelishik (padej) tizimi, fe'llarning I va II tuslanishi, zamonlar va predloglar.",
+    "summary": "Учебник русского языка для 7 класса (новое издание): Падежная система (6 падежей), спряжение глаголов, времена и предлоги.",
     "chapters": [
       {
-        "title": "1-bob. Bosh va Qaratqich kelishigi (Именительный и Родительный падежи)",
-        "summary": "Кто? Что? va Кого? Чего? so'roqlari, нет/без/у/из/от/до predloglari bilan qo'llanilishi.",
+        "title": "Глава 1. Именительный и Родительный падежи",
+        "summary": "Вопросы Кто? Что? и Кого? Чего?, предлоги без, у, от, до, из, около.",
         "key_rules": [
-          "Родительный: нет времени, у друга, из школы",
-          "2, 3, 4 sonlaridan keyin birlik Roditelniy keladi"
+          "Родительный: нет времени, из школы, у друга"
         ]
       },
       {
-        "title": "2-bob. Jo'nalish va Tushum kelishigi (Дательный и Винительный падежи)",
-        "summary": "Кому? Чему? (к, по) va Кого? Что? (в, на, через) kelishiklari hamda yo'nalish ifodalash.",
+        "title": "Глава 2. Дательный и Винительный падежи",
+        "summary": "Вопросы Кому? Чему? (к, по) и Кого? Что? (в, на, через).",
         "key_rules": [
           "Дательный: помочь другу, идти к врачу",
           "Винительный: читать книгу, идти в школу"
         ]
       },
       {
-        "title": "3-bob. Chog'ishtirma va O'rin-payt kelishigi (Творительный и Предложный падежи)",
-        "summary": "Кем? Чем? (с, над, под, перед, за) va О ком? О чём? Где? (в, на, о/об) padejlari.",
+        "title": "Глава 3. Творительный и Предложный падежи",
+        "summary": "Вопросы Кем? Чем? (с, над, под, перед) и О ком? О чём? Где? (в, на, о).",
         "key_rules": [
           "Творительный: писать ручкой, стать врачом",
           "Предложный: учиться в школе, думать о будущем"
         ]
       },
       {
-        "title": "4-bob. Fe'l tuslanishi va zamonlar (Спряжение и время глаголов)",
-        "summary": "I va II tuslanish fe'llari, o'tgan zamonning jins qo'shimchalari (-л, -ла, -ло, -ли) va kelasi zamon.",
+        "title": "Глава 4. Спряжение и время глаголов",
+        "summary": "I и II спряжение глаголов, прошедшее и будущее время.",
         "key_rules": [
-          "I tuslanish: -у/-ю, -ешь, -ет, -ем, -ете, -ут/-ют",
-          "II tuslanish: -у/-ю, -ишь, -ит, -им, -ите, -ат/-ят"
+          "I спряжение: -ешь, -ет, -ем, -ете, -ут/-ют",
+          "II спряжение: -ишь, -ит, -им, -ите, -ат/-ят"
         ]
       }
     ]
@@ -554,39 +545,31 @@
     "cover_image": null,
     "file_url": null,
     "slug": "8-sinf-rus-tili-yangi-tahrir",
-    "summary": "8-sinf uchun yangi tahrirdagi Rus tili darsligi: Fe'l turlari (вид глагола), harakat fe'llari, ravishlar, sonlar va so'z yasalishi.",
+    "summary": "Учебник русского языка для 8 класса (новое издание): Вид глагола (НСВ/СВ), глаголы движения, степени сравнения прилагательных, наречия и числительные.",
     "chapters": [
       {
-        "title": "1-bob. Tugallangan va tugallanmagan fe'l (Совершенный и несовершенный вид)",
-        "summary": "Что делать? (НСВ) va Что сделать? (СВ) fe'l juftliklari va ularning nutqda to'g'ri ishlatilishi.",
+        "title": "Глава 1. Совершенный и несовершенный вид глагола",
+        "summary": "Видовые пары (делать — сделать, писать — написать, брать — взять).",
         "key_rules": [
-          "НСВ: делать, писать, читать, говорить",
-          "СВ: сделать, написать, прочитать, сказать"
+          "НСВ — что делать?",
+          "СВ — что сделать?"
         ]
       },
       {
-        "title": "2-bob. Harakat fe'llari (Глаголы движения)",
-        "summary": "Идти — ходить, ехать — ездить, бежать — бегать, лететь — летать va old qo'shimchali (при-, у-, вы-, за-) shakllar.",
+        "title": "Глава 2. Глаголы движения",
+        "summary": "Идти — ходить, ехать — ездить, лететь — летать и приставки движения.",
         "key_rules": [
-          "Идти — bir yo'nalishda (hozir)",
-          "Ходить — muntazam yoki borib-kelish"
+          "Идти — однонаправленное движение",
+          "Ходить — регулярное или разнонаправленное"
         ]
       },
       {
-        "title": "3-bob. Sifat darajalari va ravishlar (Степени сравнения и наречия)",
-        "summary": "Qiyosiy va orttirma daraja (быстрее, самый красивый, лучше, хуже) hamda ravishlarning imlosi.",
+        "title": "Глава 3. Степени сравнения прилагательных и наречия",
+        "summary": "Простая и составная сравнительная и превосходная степень (лучше, хуже, выше, быстрее).",
         "key_rules": [
           "хороший → лучше",
           "плохой → хуже",
           "маленький → меньше"
-        ]
-      },
-      {
-        "title": "4-bob. Sonlar va vaqtni ifodalash (Числительные и время)",
-        "summary": "Sanoq va tartib sonlar, soat va sanani rus tilida to'g'ri aytish qoidalari.",
-        "key_rules": [
-          "1 час, 2-4 часа, 5-20 часов",
-          "Который час? — Сейчас ровно девять часов."
         ]
       }
     ]
@@ -601,31 +584,29 @@
     "cover_image": null,
     "file_url": null,
     "slug": "9-sinf-rus-tili-yangi-tahrir",
-    "summary": "9-sinf uchun yangi tahrirdagi Rus tili darsligi: Sodda va qo'shma gap sintaksisi, sifatdosh (причастие), ravishdosh (деепричастие) va punktuatsiya.",
+    "summary": "Учебник русского языка для 9 класса (новое издание): Синтаксис простого и сложного предложения, причастие, деепричастие и пунктуация.",
     "chapters": [
       {
-        "title": "1-bob. Sodda gap va gap bo'laklari (Простое предложение)",
-        "summary": "Ega va kesim, to'ldiruvchi, aniqlovchi va hol; bir tarkibli gap turlari.",
+        "title": "Глава 1. Простое предложение и члены предложения",
+        "summary": "Подлежащее, сказуемое, дополнение, определение, обстоятельство.",
         "key_rules": [
-          "Подлежащее (ega) — Кто? Что?",
-          "Сказуемое (kesim) — Что делает?"
+          "Подлежащее и сказуемое — грамматическая основа"
         ]
       },
       {
-        "title": "2-bob. Sifatdosh va Ravishdosh (Причастие и деепричастие)",
-        "summary": "Faol va majhul sifatdoshlar (-ущ/-ющ, -ащ/-ящ, -вш-, -нн-) hamda ravishdosh oborotida vergul.",
+        "title": "Глава 2. Причастие и деепричастие",
+        "summary": "Действительные и страдательные причастия, обособление причастного и деепричастного оборотов.",
         "key_rules": [
-          "Деепричастный оборот har doim vergul bilan ajratiladi",
-          "Причастный оборот otdan keyin kelsa vergul qo'yiladi"
+          "Деепричастный оборот всегда выделяется запятыми"
         ]
       },
       {
-        "title": "3-bob. Bog'lovchili va bog'lovchisiz qo'shma gaplar (Сложные предложения)",
-        "summary": "Сложносочинённые (и, а, но) va сложноподчинённые (что, чтобы, потому что, который, если) gaplar.",
+        "title": "Глава 3. Сложносочинённые и сложноподчинённые предложения",
+        "summary": "Союзы и, а, но, что, чтобы, потому что, если, хотя, который.",
         "key_rules": [
-          "чтобы — maqsad ergash gapi",
-          "потому что — sabab ergash gapi",
-          "если — shart ergash gapi"
+          "чтобы — цель",
+          "потому что — причина",
+          "если — условие"
         ]
       }
     ]
@@ -640,30 +621,30 @@
     "cover_image": null,
     "file_url": null,
     "slug": "10-sinf-rus-tili-yangi-tahrir",
-    "summary": "10-sinf uchun yangi tahrirdagi Rus tili darsligi: Nutq uslublari (стили речи), rasmiy-idoraviy va ilmiy uslub, frazeologizmlar va murakkab orfografiya.",
+    "summary": "Учебник русского языка для 10 класса (новое издание): Стили речи, сложная орфография (Н/НН, НЕ, ПРИ-/ПРЕ-), фразеология.",
     "chapters": [
       {
-        "title": "1-bob. Nutq uslublari (Функциональные стили речи)",
-        "summary": "So'zlashuv, ilmiy, rasmiy-idoraviy, publitsistik va badiiy uslublarning xususiyatlari.",
+        "title": "Глава 1. Функциональные стили речи",
+        "summary": "Научный, официально-деловой, публицистический, художественный и разговорный стили.",
         "key_rules": [
-          "Официально-деловой стиль — ariza, shartnoma, qonun",
-          "Научный стиль — atamalar va aniq mantiq"
+          "Официально-деловой — документы и законы",
+          "Научный — термины и точность"
         ]
       },
       {
-        "title": "2-bob. Murakkab imlo qoidalari (Сложные случаи орфографии)",
-        "summary": "Н va НН yozilishi, НЕ ning so'z turkumlari bilan qo'shilib yoki ajratib yozilishi, ПРИ-/ПРЕ- old qo'shimchalari.",
+        "title": "Глава 2. Сложные правила орфографии",
+        "summary": "Правописание Н и НН, слитное/раздельное НЕ, приставки ПРИ-/ПРЕ-, З-/С-.",
         "key_rules": [
-          "НЕ fe'llar bilan ajratib yoziladi (не знаю, не был)",
-          "ПРИ- — yaqinlashish; ПРЕ- — juda (очень) ma'nosida"
+          "НЕ с глаголами пишется раздельно",
+          "стеклянный, оловянный, деревянный — НН"
         ]
       },
       {
-        "title": "3-bob. Frazeologizmlar va badiiy vositalar (Фразеология)",
-        "summary": "Rus tilidagi eng mashhur iboralar (бить баклуши, держать язык за зубами, золотые руки) va ularning o'zbekcha muqobili.",
+        "title": "Глава 3. Фразеология",
+        "summary": "Устойчивые выражения русского языка и их значения.",
         "key_rules": [
-          "Золотые руки — qo'li gul usta",
-          "Ни пуха ни пера — omad tilash iborasi"
+          "Бить баклуши — бездельничать",
+          "Золотые руки — мастер своего дела"
         ]
       }
     ]
@@ -678,29 +659,27 @@
     "cover_image": null,
     "file_url": null,
     "slug": "11-sinf-rus-tili-yangi-tahrir",
-    "summary": "11-sinf uchun yangi tahrirdagi Rus tili darsligi: Akademik yozuv, esse, orfoepiya (to'g'ri urg'u), paronimlar, matn tahlili va imtihonga tayyorgarlik.",
+    "summary": "Учебник русского языка для 11 класса (новое издание): Орфоэпия (ударение), паронимы, культура речи и подготовка к экзаменам.",
     "chapters": [
       {
-        "title": "1-bob. Orfoepiya va to'g'ri urg'u normalari (Орфоэпия)",
-        "summary": "Imtihonlarda eng ko'p uchraydigan urg'u normalari: звони́т, догово́р, катало́г, краси́вее, то́рты, кварта́л.",
+        "title": "Глава 1. Орфоэпические нормы (Ударение)",
+        "summary": "Правильное ударение в словах: звони́т, догово́р, катало́г, краси́вее, то́рты, кварта́л.",
         "key_rules": [
-          "звони́т (o'ng'ay emas: зво́нит xato!)",
-          "краси́вее, догово́р, катало́г, то́рты"
+          "Правильно: звони́т, краси́вее, догово́р, то́рты"
         ]
       },
       {
-        "title": "2-bob. Paronimlar va leksik normalar (Паронимы)",
-        "summary": "Одеть / надеть, адресат / адресант, эффектный / эффективный, дипломат / дипломант farqlari.",
+        "title": "Глава 2. Паронимы и речевые нормы",
+        "summary": "Одеть / надеть, адресат / адресант, эффектный / эффективный, дипломат / дипломант.",
         "key_rules": [
-          "Одеть кого-то (bolani kiyintirish)",
-          "Надеть что-то (kurtkani kiyish)"
+          "Одеть кого-то, но надеть что-то"
         ]
       },
       {
-        "title": "3-bob. Akademik matn va esse yozish (Академическое письмо)",
-        "summary": "Kirish so'zlar (во-первых, таким образом, следовательно), dalillash va xulosa yozish texnikasi.",
+        "title": "Глава 3. Культура речи и вводные слова",
+        "summary": "Пунктуация при вводных словах и обращениях, структура академического текста.",
         "key_rules": [
-          "Вводные слова (конечно, во-первых, к сожалению) har doim vergul bilan ajratiladi"
+          "Вводные слова (конечно, во-первых) всегда выделяются запятыми"
         ]
       }
     ]

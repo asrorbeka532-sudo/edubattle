@@ -425,11 +425,13 @@ def init_db():
     except Exception as e:
         print(f"Huquq auto-seed check: {e}")
 
-    # Auto-seed Rus tili (Yangi tahrir) subject, 6 textbooks and 1,173+ Blitz questions
+    # Auto-seed Rus tili (Yangi tahrir) subject, 6 textbooks and 1,000+ pure Russian-only Blitz questions
     try:
         cursor.execute("SELECT count(*) FROM questions WHERE subject_id = 10;")
-        ru_cnt = cursor.fetchone()
-        if not ru_cnt or ru_cnt[0] < 1000:
+        ru_cnt = cursor.fetchone()[0]
+        cursor.execute("SELECT count(*) FROM questions WHERE subject_id = 10 AND (question_text LIKE '%tarjima%' OR question_text LIKE '%qaysi?%' OR question_text LIKE '%o''zbekcha%');")
+        old_uz_cnt = cursor.fetchone()[0]
+        if ru_cnt < 1000 or old_uz_cnt > 0:
             import sys
             _bdir = os.path.dirname(os.path.abspath(__file__))
             if _bdir not in sys.path:
